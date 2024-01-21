@@ -1,0 +1,1 @@
+void decrypt_secondary_key0(void *data, uint32_t key_id,void *packet9,void *out);

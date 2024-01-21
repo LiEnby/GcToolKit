@@ -52,3 +52,5 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+kern/build/*
+app/build/*
