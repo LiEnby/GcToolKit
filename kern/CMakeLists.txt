@@ -22,11 +22,15 @@ link_directories(
 add_executable(${PROJECT_NAME}
 	main.c
 	f00d.c
+	io.c
+	cobra.c
+	cmd56.c
 )
 
 target_link_libraries(${PROJECT_NAME}
 	SKPLForKernel_stub
 	taihenForKernel_stub
+	SceThreadmgrForDriver_stub
 	SceSblSmCommForKernel_stub
 	SceIofilemgrForDriver_stub
 	SceSysclibForDriver_stub

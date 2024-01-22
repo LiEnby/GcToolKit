@@ -70,7 +70,7 @@ void free_shared_mem(int uid) {
 	ksceKernelFreeMemBlock(uid);	
 }
 
-void decrypt_secondary_key0(void *data, uint32_t key_id,void *packet9,void *out) {
+void k_decrypt_secondary_key0(void *data, uint32_t key_id,void *packet9,void *out) {
 	int uid = alloc_shared_mem();
 
 	// start authmgr_sm
@@ -103,4 +103,18 @@ void decrypt_secondary_key0(void *data, uint32_t key_id,void *packet9,void *out)
 	free_shared_mem(uid);
 	sm_end(sm);
 	
+}
+
+// user syscalls
+
+void DecryptSecondaryKey0(void* data, uint32_t key_id, void* packet9, void* out) {
+	char k_data[0x20];
+	char k_packet9[0x30];
+	char k_out[0x10];
+	ksceKernelMemcpyUserToKernel(k_data, (const void*)data, sizeof(k_data));
+	ksceKernelMemcpyUserToKernel(k_packet9, (const void*)packet9, sizeof(k_data));
+
+	k_decrypt_secondary_key0(k_data, key_id, k_packet9, k_out);
+
+	ksceKernelMemcpyKernelToUser(out, (const void*)k_out, sizeof(k_out));
 }

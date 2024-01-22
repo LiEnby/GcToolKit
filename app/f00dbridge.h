@@ -2,6 +2,12 @@ int HasCmd20Captured();
 int GetLastCmd20KeyId();
 int GetLastCmd20Input(char* cmd20_input);
 void DecryptSecondaryKey0(void* data, uint32_t key_id, void* packet9, void* out);
+
+int OpenDevice(char* device);
+int ReadDevice(int device_handle, uint8_t* data, int size);
+int CloseDevice(int device_handle);
+void GetDeviceSize(int device_handle, uint64_t* device_size);
+
 typedef struct SceSblSmCommGcData {
     int always1;
     int command;
@@ -11,7 +17,7 @@ typedef struct SceSblSmCommGcData {
     int always0;
 } SceSblSmCommGcData;
 
-typedef struct CommsData { /* reserved */
+typedef struct CommsData { 
     uint8_t packet6[32];
     uint8_t packet9[48];
     uint8_t packet17[32];

@@ -9,6 +9,7 @@
 #include "f00dbridge.h"
 
 #include "aes.h"
+#include "vci.h"
 
 int kernel_started() {
 	tai_module_info_t info;
@@ -17,10 +18,12 @@ int kernel_started() {
 	info.size = sizeof(info);
 	int res = taiGetModuleInfo("f00dbridge", &info);
 	
+	psvDebugScreenPrintf("Already Started f00d bridge... %x %x\n", res, info.modid);
+	
 	if(info.modid == 0x400100f5) 
-		return 1;
+		return 0;
 
-	if(res == 0) 
+	if(res >= 0) 
 		return 0;
 	
 	return 0;
@@ -60,17 +63,6 @@ void init() {
 	
 }
 
-int WriteFile(char *file, void *buf, int size) {
-	SceUID fd = sceIoOpen(file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-	if (fd < 0)
-		return fd;
-
-	int written = sceIoWrite(fd, buf, size);
-
-	sceIoClose(fd);
-	return written;
-}
-
 int print_buffer(uint8_t* buffer, size_t buffer_size){
 	for(int i = 0; i < buffer_size; i++)
 		psvDebugScreenPrintf("%02X", buffer[i]);
@@ -104,13 +96,7 @@ void decrypt_packet20_rifbuf(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t*
 
 }
 
-void main() {
-
-	init();
-	psvDebugScreenPrintf("Please insert a GameCart!\n");
-	psvDebugScreenPrintf("(If theres already one, eject it and put it back in)\n");
-
-	while(!HasCmd20Captured()) { sceKernelDelayThread(5000); };
+void extract_gc_keys(char* keys) {
 	
 	psvDebugScreenPrintf("Get comms data ...\n");
 
@@ -141,16 +127,72 @@ void main() {
 	psvDebugScreenPrintf("Get Key Parital 2 ... ");		
 	print_buffer(rif, sizeof(rif));
 
-	// write key to a file
-	char keys[0x40];
-	memset(keys, 0x00, sizeof(keys));
-	
+	// extract keys
+	memset(keys, 0x00, 0x40);
 	memcpy(keys, klic, 0x20);
 	memcpy(keys+0x20, rif, 0x20);
-	WriteFile("ux0:/data/GC_KEYS.BIN", keys, sizeof(keys));
 	
-	psvDebugScreenPrintf("Written to ux0:/data/GC_KEYS.BIN ...\n");	
+}
+
+int dump_gc(char* output_path, char* keys) {
+	char* GC_DEVICE = "sdstor0:gcd-lp-ign-entire";
+	SceUID gc_fd = sceIoOpen(output_path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
+	
+	
+	psvDebugScreenPrintf("Begin Device Dump ...\n");
+	
+	int device_fd = OpenDevice(GC_DEVICE);
+	psvDebugScreenPrintf("Open Device: %s = 0x%04X\n", GC_DEVICE, device_fd);
+	
+	uint64_t device_size = 0;
+	GetDeviceSize(device_fd, &device_size);
+	psvDebugScreenPrintf("Device Size: 0x%llx\n", device_size);
+	
+	// write VCI file
+	psvDebugScreenPrintf("Write file header ...\n");
+	
+	VciFile vci;
+	memset(&vci, 0x00, sizeof(VciFile));
+	strncpy(vci.magic, "VCI", sizeof(vci.magic));
+	vci.version = 1;
+	vci.devicesize = device_size;
+	memcpy(vci.key1, keys, sizeof(vci.key1) * 2);
+	
+	sceIoWrite(gc_fd, &vci, sizeof(VciFile)); // write header
+	
+	
+	uint64_t total_read = 0;
+
+	do {
+		static uint8_t data[0x20000]__attribute__((aligned(0x40))); // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
+		int res = ReadDevice(device_fd, data, sizeof(data)); // read raw from device
+		if(res < 0) { psvDebugScreenPrintf("ReadDevice error : %x\n", res); break; }
+		
+		total_read += sceIoWrite(gc_fd, data, res); // write raw data
+		
+		psvDebugScreenPrintf("Written: 0x%llx / 0x%llx ... %i%%\n", total_read, device_size, (int)((float)total_read / (float)device_size)*100.0);
+	} while(total_read < device_size);
+	
+	sceIoClose(gc_fd);
+	CloseDevice(device_fd);
+	
+	return 0;
+}
+
+
+int main() {
+
+	init();
+	psvDebugScreenPrintf("Please insert a GameCart!\n");
+	psvDebugScreenPrintf("(If theres already one, eject it and put it back in)\n");
+
+	while(!HasCmd20Captured()) { sceKernelDelayThread(5000); };
+
+	char keys[0x40];
+	extract_gc_keys(keys);
+	dump_gc("uma0:/GC.VCI", keys);
 	
 	get_key();
 	
+	return 0;
 }
