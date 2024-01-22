@@ -170,7 +170,7 @@ int dump_gc(char* output_path, char* keys) {
 		
 		total_read += sceIoWrite(gc_fd, data, res); // write raw data
 		
-		psvDebugScreenPrintf("Written: 0x%llx / 0x%llx ... %i%%\n", total_read, device_size, (int)((float)total_read / (float)device_size)*100.0);
+		psvDebugScreenPrintf("Written: 0x%llx / 0x%llx ... %i%%\n", total_read, device_size, (int)(((float)total_read / (float)device_size)*100.0));
 	} while(total_read < device_size);
 	
 	sceIoClose(gc_fd);
