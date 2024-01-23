@@ -1,10 +1,12 @@
 #include <stdint.h>
+#include "crypto.h"
+
+#define VCI_HDR "VCI\0"
 
 typedef struct VciFile {
 	char magic[0x4];
 	int version;
 	uint64_t devicesize;
-	uint8_t key1[0x20];
-	uint8_t key2[0x20];
+	GcKeys keys;
 	uint8_t padding[0x1B0];
 } VciFile;

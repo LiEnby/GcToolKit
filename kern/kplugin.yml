@@ -14,7 +14,9 @@ f00dbridge:
         - GetLastCmd20Input
         - GetLastCmd20KeyId
         - HasCmd20Captured
+        - ResetCmd20Input
         - OpenDevice
         - ReadDevice
         - CloseDevice
         - GetDeviceSize
+        

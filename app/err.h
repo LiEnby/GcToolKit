@@ -1,0 +1,1 @@
+#define ERROR(x) { ret = x; goto error; }

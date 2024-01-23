@@ -1,0 +1,1 @@
+int read_gameinfo(char* title_id, char* title);

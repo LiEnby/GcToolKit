@@ -49,13 +49,16 @@ void cmd56_unpatch() {
 
 // user syscalls
 
-int GetLastCmd20Input(char* cmd20_input) {
-	ksceKernelMemcpyKernelToUser(cmd20_input, (const void*)LAST_CAPTURED_CMD20_INPUT, sizeof(LAST_CAPTURED_CMD20_INPUT));
-	
+int ResetCmd20Input() {
 	// remove the flag saying we have captured one so another GC can have data captured.
 	memset(LAST_CAPTURED_CMD20_INPUT, 0x00, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	HAS_CAPTURED_CMD20 = 0;
-	
+	return 0;
+}
+
+int GetLastCmd20Input(char* cmd20_input) {
+	ksceKernelMemcpyKernelToUser(cmd20_input, (const void*)LAST_CAPTURED_CMD20_INPUT, sizeof(LAST_CAPTURED_CMD20_INPUT));
+		
 	return 0;
 }
 

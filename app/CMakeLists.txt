@@ -32,22 +32,44 @@ link_directories(
 
 add_executable(${PROJECT_NAME}
 	aes.c
-	main.c
-	font.c
-	graphics.c
 	ctrl.c
+	draw.c
+	device.c
+	crypto.c
+	kernel.c
+	io.c
+	gameinfo.c
+	sfo.c
+	main.c
+	menu.c
+	ime.c
 )
 
 target_link_libraries(${PROJECT_NAME}
+	vita2d
 	f00dbridge_stub
+	taihen_stub
+	
 	SceDisplay_stub
+	SceGxm_stub
+	ScePgf_stub
+	ScePvf_stub
+	SceCommonDialog_stub
 	SceCtrl_stub
 	SceVshBridge_stub
 	SceAppMgr_stub
 	SceIofilemgr_stub
 	ScePower_stub
 	SceRegistryMgr_stub
-	taihen_stub
+	SceShellSvc_stub
+	SceAppUtil_stub
+
+	freetype
+	png
+	jpeg
+	z
+	c
+	m
 )
 
 vita_create_self(eboot.bin ${PROJECT_NAME} UNSAFE)
@@ -64,4 +86,9 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} eboot.bin
   FILE res/sce_sys/pic0.png sce_sys/pic0.png
   FILE res/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
   FILE res/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+  
+  FILE res/background.png res/background.png
+  FILE res/insertgc.png res/insertgc.png
+  FILE res/menuoverlay.png res/menuoverlay.png
+  
 )
