@@ -85,7 +85,7 @@ void handle_menu_set_output(char* fmt, int what) {
 		do_confirm_message("Error!", msg);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\"", out_dumpfile);
+		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\" ...", out_dumpfile);
 		do_confirm_message("Backup Success!", msg);
 	}
 }
