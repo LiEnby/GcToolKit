@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <vitasdk.h>
+#include <string.h>
+
 #include "io.h"
-#define USBDEVICE_FILE "ux0:/VitaShell/module/usbdevice.skprx"
 
 int has_gro0() {
 	return file_exist("gro0:");	
