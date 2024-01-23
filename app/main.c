@@ -81,11 +81,11 @@ void handle_menu_set_output(char* fmt, int what) {
 
 	char msg[0x1028];	
 	if(res < 0) {
-		snprintf(msg, sizeof(msg), "There was an error creating the backup, ( res = 0x%08X )", res);
+		snprintf(msg, sizeof(msg), "There was an error creating the backup\n( res = 0x%08X )", res);
 		do_confirm_message("Error!", msg);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Backup created at: \"%.25s\"", out_dumpfile);
+		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\"", out_dumpfile);
 		do_confirm_message("Backup Success!", msg);
 	}
 }

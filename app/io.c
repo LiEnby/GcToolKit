@@ -73,7 +73,7 @@ int mount_gro0() {
 }
 
 int mount_grw0() {
-	return mount_partition(0xA00, NULL, 2, 0, 0, 0); // mount gro0
+	return mount_partition(0xA00, NULL, 2, 0, 0, 0); // mount grw0
 }
 
 void umount_gro0() {

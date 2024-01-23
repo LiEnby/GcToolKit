@@ -146,11 +146,11 @@ int draw_select_output_location(int* selected, char* output_file, uint8_t have_x
 	
 	DEFOPT(240);
 	
+	ADDOPT(1, "Save to \"ux0\"");
 	ADDOPT(have_xmc, "Save to Sony Memory Card");
 	ADDOPT(have_usb, "Save to USB Drive");
 	ADDOPT(have_host0, "Save to Devkit Host0");	
 	ADDOPT(save_network, "Save to Network");
-	ADDOPT(1, "Save to \"ux0\"");
 	ADDOPT(1, "Change file name");
 	ADDOPT(1, "Refresh Devices");
 	
@@ -215,6 +215,7 @@ int do_gc_full_dump(char* output_file) {
 
 	mount_gro0();
 	mount_grw0();
+	umount_devices();
 	return res;
 }
 
@@ -233,7 +234,8 @@ int do_device_dump(char* input_device, char* output_file) {
 
 	mount_gro0();
 	mount_grw0();
-
+	
+	umount_devices();
 	return res;
 }
 
