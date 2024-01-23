@@ -11,6 +11,9 @@ int mount_uma();
 int mount_xmc();
 int mount_imc();
 
+int mount_gro0();
+int mount_grw0();
+
 void umount_gro0();
 void umount_grw0();
 

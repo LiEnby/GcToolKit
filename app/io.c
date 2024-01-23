@@ -56,15 +56,23 @@ int mount_partition(int id, const char *path, int permission, int a4, int a5, in
 }
 
 int mount_uma() {
-	return mount_partition(0xF00, NULL, 0, 0, 0, 0); // mount uma0
+	return mount_partition(0xF00, NULL, 2, 0, 0, 0); // mount uma0
 }
 
 int mount_xmc() {
-	return mount_partition(0xE00, NULL, 0, 0, 0, 0); // mount xmc
+	return mount_partition(0xE00, NULL, 2, 0, 0, 0); // mount xmc
 }
 
 int mount_imc() {
-	return mount_partition(0xD00, NULL, 0, 0, 0, 0); // mount imc
+	return mount_partition(0xD00, NULL, 2, 0, 0, 0); // mount imc
+}
+
+int mount_gro0() {
+	return mount_partition(0x900, NULL, 1, 0, 0, 0); // mount gro0
+}
+
+int mount_grw0() {
+	return mount_partition(0xA00, NULL, 2, 0, 0, 0); // mount gro0
 }
 
 void umount_gro0() {

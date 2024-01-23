@@ -161,6 +161,7 @@ int draw_select_output_location(int* selected, char* output_file, uint8_t have_x
 
 
 void draw_dump_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
+	
 	start_draw();
 	draw_background();
 	
@@ -168,7 +169,7 @@ void draw_dump_progress(char* device, char* output_filename, uint64_t progress, 
 	snprintf(output_txt, sizeof(output_txt), "Backing up %s ...", device);
 	draw_title(output_txt);
 
-	snprintf(output_txt, sizeof(output_txt), "Writing \"%.35s\" ...", output_filename);
+	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", output_filename);
 	draw_text_center(200, output_txt);
 	
 	draw_progress_bar(210, progress, total);
@@ -205,12 +206,15 @@ int do_gc_full_dump(char* output_file) {
 	umount_gro0();
 	umount_grw0();
 
-	lock_shell();
 	GcKeys keys;
 	extract_gc_keys(&keys);
+
+	lock_shell();
 	int res = dump_device("sdstor0:gcd-lp-ign-entire", output_file, &keys, draw_dump_progress);
 	unlock_shell();
 
+	mount_gro0();
+	mount_grw0();
 	return res;
 }
 
@@ -226,6 +230,9 @@ int do_device_dump(char* input_device, char* output_file) {
 	lock_shell();
 	int res = dump_device(input_device, output_file, NULL, draw_dump_progress);
 	unlock_shell();
+
+	mount_gro0();
+	mount_grw0();
 
 	return res;
 }

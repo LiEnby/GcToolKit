@@ -59,8 +59,12 @@ int dump_device(char* device, char* output_path, GcKeys* keys, void (*progress_c
 
 	do {
 		int rd = ReadDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // read raw from device
+		if(rd == 0) ERROR(-2);
 		if(rd < 0) ERROR(rd);
+
 		total_read += sceIoWrite(gc_fd, DEVICE_DUMP_BUFFER, rd); // write raw data
+	
+		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
 		if(progress_callback != NULL) progress_callback(device, output_path, total_read, device_size);
 	} while(total_read < device_size);
 	
