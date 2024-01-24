@@ -9,9 +9,13 @@ static uint8_t LAST_CAPTURED_CMD20_INPUT[0x116];
 static uint32_t LAST_CAPTURED_CMD20_KEYID = 0;
 static uint8_t HAS_CAPTURED_CMD20 = 0;
 
+// prototype keyid check patch
+static int proto_keyid_check_inject = -1;
+
 // hooks for capturing GC comms
 static int ksceSblSmCommCallFuncHook = -1;
 static tai_hook_ref_t ksceSblSmCommCallFuncHookRef;
+
 
 int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt32 *service_result, SceSblSmCommGcData *data, SceSize size) {
 	ksceDebugPrintf("cmd = %x\n", data->command);
@@ -31,20 +35,38 @@ int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt
 void cmd56_patch() {
 	memset(LAST_CAPTURED_CMD20_INPUT, 0x00, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	
-	// capture sm communications
-	ksceSblSmCommCallFuncHook = taiHookFunctionImportForKernel(KERNEL_PID,
-		&ksceSblSmCommCallFuncHookRef, 
-		"SceSblGcAuthMgr", 
-		0xCD3C89B6, // SceSblSmCommForKernel
-		0xDB9FC204, // ksceSblSmCommCallFunc
-		ksceSblSmCommCallFunc_patch);
+	tai_module_info_t info;
+	info.size = sizeof(tai_module_info_t);
+	int res = taiGetModuleInfoForKernel(KERNEL_PID, "SceSblGcAuthMgr", &info);
+	if(res >= 0) {
+		// prototype game carts use key ids != 1,
+		// 3.60 firmware checks if ((key_id & 0xffff7fff) == 1)
+		// it would be nice if we could dump prototype gamecarts tho ..
 	
-	ksceDebugPrintf("ksceSblSmCommCallFuncHook 0x%04X\n", ksceSblSmCommCallFuncHook);
-	ksceDebugPrintf("ksceSblSmCommCallFuncHookRef 0x%04X\n", ksceSblSmCommCallFuncHookRef);
+		uint16_t nop_instruction = 0xBF00;
+		proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, info.modid, 0, 0x9376, &nop_instruction, sizeof(uint16_t));
+		ksceDebugPrintf("proto_keyid_check_inject 0x%04X\n", proto_keyid_check_inject);
+		
+		// capture sm communications
+		ksceSblSmCommCallFuncHook = taiHookFunctionImportForKernel(KERNEL_PID,
+			&ksceSblSmCommCallFuncHookRef, 
+			"SceSblGcAuthMgr", 
+			0xCD3C89B6, // SceSblSmCommForKernel
+			0xDB9FC204, // ksceSblSmCommCallFunc
+			ksceSblSmCommCallFunc_patch);
+		
+		ksceDebugPrintf("ksceSblSmCommCallFuncHook 0x%04X\n", ksceSblSmCommCallFuncHook);
+		ksceDebugPrintf("ksceSblSmCommCallFuncHookRef 0x%04X\n", ksceSblSmCommCallFuncHookRef);
+	}
+	
+	ksceDebugPrintf("get module info 0x%04X\n", res);
+	
 }
 
 void cmd56_unpatch() {
-	if (ksceSblSmCommCallFuncHook >= 0)		 taiHookReleaseForKernel(ksceSblSmCommCallFuncHook, 	 ksceSblSmCommCallFuncHookRef);
+	if (ksceSblSmCommCallFuncHook >= 0)		 taiHookReleaseForKernel(ksceSblSmCommCallFuncHook, ksceSblSmCommCallFuncHookRef);
+	if (proto_keyid_check_inject >= 0)		 taiInjectReleaseForKernel(proto_keyid_check_inject);
+
 }
 
 // user syscalls

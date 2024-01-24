@@ -22,3 +22,5 @@ void umount_uma();
 void umount_xmc();
 void umount_imc();
 void umount_devices();
+
+uint64_t get_free_space(const char* device);

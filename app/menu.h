@@ -1,8 +1,7 @@
 void do_gc_insert_prompt();
 int do_gc_options();
 int do_select_output_location(char* format, char* output);
-int do_gc_full_dump(char* output_file);
-int do_device_dump(char* input_device, char* output_file);
+int do_device_dump(char* input_device, char* output_file, uint8_t vci);
 void do_confirm_message(char* title, char* msg);
 
 void init_menus();

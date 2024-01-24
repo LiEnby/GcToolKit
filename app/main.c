@@ -66,16 +66,16 @@ void handle_menu_set_output(char* fmt, int what) {
 	int res = 0;
 	switch(what) {
 		case DUMP_WHOLE_GC:
-			res = do_gc_full_dump(out_dumpfile);
+			res = do_device_dump(BLOCK_DEVICE_GC, out_dumpfile, 1);
 			break;
 		case DUMP_KEYS_ONLY:
-			key_dump(out_dumpfile);
+			res = key_dump(out_dumpfile);
 			break;
 		case DUMP_MEDIAID:
-			res = do_device_dump("sdstor0:gcd-lp-act-mediaid", out_dumpfile);
+			res = do_device_dump(BLOCK_DEVICE_MEDIAID, out_dumpfile, 0);
 			break;
 		case DUMP_GRW0:
-			res = do_device_dump("sdstor0:gcd-lp-ign-gamerw", out_dumpfile);
+			res = do_device_dump(BLOCK_DEVICE_GRw0, out_dumpfile, 0);
 			break;
 	}
 

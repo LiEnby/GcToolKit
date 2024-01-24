@@ -70,8 +70,9 @@ int extract_gc_keys(GcKeys* keys) {
 		// decrypt secondaryKey0 (requires f00d)
 		uint8_t secondaryKey0[0x10];
 		memset(secondaryKey0, 0xFF, sizeof(secondaryKey0));
-		DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
-
+		int res = DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
+		if(res < 0) return res;
+		
 		// decrypt klic part from packet18
 		decrypt_packet18_klic(secondaryKey0, cmdData.packet18, keys->klic);
 

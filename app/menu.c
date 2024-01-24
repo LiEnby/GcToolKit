@@ -202,34 +202,26 @@ int do_gc_options() {
 	
 	PROCESS_MENU(draw_gc_options, title, have_grw0, 1);
 }
-int do_gc_full_dump(char* output_file) {
-	umount_gro0();
-	umount_grw0();
-
-	GcKeys keys;
-	extract_gc_keys(&keys);
-
-	lock_shell();
-	int res = dump_device("sdstor0:gcd-lp-ign-entire", output_file, &keys, draw_dump_progress);
-	unlock_shell();
-
-	mount_gro0();
-	mount_grw0();
-	umount_devices();
-	return res;
-}
 
 void do_confirm_message(char* title, char* msg) {
 	draw_confirmation_message(title, msg);
 	get_key();
 }
 
-int do_device_dump(char* input_device, char* output_file) {
+int do_device_dump(char* input_device, char* output_file, uint8_t vci) {
 	umount_gro0();
 	umount_grw0();
 
+	mount_devices();
+	
+	GcKeys keys;
+	if(vci){
+		int res = extract_gc_keys(&keys);
+		if(res < 0) return res;
+	}
+
 	lock_shell();
-	int res = dump_device(input_device, output_file, NULL, draw_dump_progress);
+	int res = dump_device(input_device, output_file, vci ? &keys : NULL, draw_dump_progress);
 	unlock_shell();
 
 	mount_gro0();
