@@ -7,6 +7,7 @@
 #include "io.h"
 #include "net.h"
 #include "f00dbridge.h"
+#include "kernel.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -69,27 +70,6 @@ static uint8_t options[100];
 					  sceClibPrintf("selected after adjustment: %x\n", selected); \
 				  } \
 				  return selected;
-
-void lock_shell() {
-	sceShellUtilInitEvents(0);
-	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
-					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
-}
-
-void unlock_shell() {
-	 sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
-					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
-					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
-}
 
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
@@ -280,6 +260,8 @@ int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_
 	
 	umount_gro0();
 	umount_grw0();
+	
+	disable_power_off();
 
 	mount_devices();
 	
@@ -292,6 +274,8 @@ int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_
 		res = dump_device_network(ip_address, port, block_device, output_file, vci ? &keys : NULL, draw_dump_progress);
 	
 	unlock_shell();
+
+	enable_power_off();
 
 	mount_gro0();
 	mount_grw0();

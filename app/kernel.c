@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <vitasdk.h>
+#include "err.h"
+
+static uint8_t disable_power = 0;
 
 int kernel_started() {
 	char buffer[0x8];
@@ -45,4 +48,55 @@ void load_kernel_modules() {
 		sceAppMgrLoadExec(kplugin_path, NULL, NULL);
 	}
 	
+}
+
+
+
+int power_tick_thread(size_t args, void* argp) {
+	disable_power = 1;
+	while(disable_power){
+		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
+		sceKernelDeleteThread(1000 * 1000 * 1);		
+	}
+	return 0;
+}
+
+void enable_power_off() {
+	disable_power = 0;
+}
+
+int disable_power_off() {
+	int ret = 0;
+	SceUID thid = sceKernelCreateThread("PowerTickThread", power_tick_thread, 0x10000100, 0x1000, 0, 0, NULL);
+	if(thid < 0) ERROR(thid);
+
+	int startresult = sceKernelStartThread(thid, 0, NULL);
+	if(startresult < 0) ERROR(startresult);
+	
+error:
+	if(thid < 0)
+		sceKernelDeleteThread(thid);
+	return ret;
+}
+
+
+void lock_shell() {
+	sceShellUtilInitEvents(0);
+	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
+					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
+					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
+					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
+					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
+					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+}
+
+void unlock_shell() {
+	 sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
+					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
+					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
+					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
+					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
+					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
 }

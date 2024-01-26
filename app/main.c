@@ -209,7 +209,6 @@ void handle_menu_select_option() {
 
 }
 
-
 int main() {
 
 	load_kernel_modules();

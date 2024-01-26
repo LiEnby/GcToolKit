@@ -83,7 +83,6 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 		if(wr < 0) ERROR(wr);
 		
 		total_read += wr;
-		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
 		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
 	} while(total_read < device_size);
 	
@@ -150,7 +149,6 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 		if(wr < 0) ERROR(wr);
 		
 		total_read += wr;
-		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
 		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
 	} while(total_read < device_size);
 	
