@@ -1,8 +1,12 @@
+#include <stdint.h>
+
 void do_gc_insert_prompt();
 int do_gc_options();
-int do_select_output_location(char* format, char* output);
-int do_device_dump(char* input_device, char* output_file, uint8_t vci);
+int do_select_output_location(char* format, char* output, uint64_t device_size);
+int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port);
 void do_confirm_message(char* title, char* msg);
+int do_network_options(char* ip_address, unsigned short port);
+void do_ime();
 
 void init_menus();
 void term_menus();
@@ -17,6 +21,12 @@ enum insert_menu_options {
 	WRITE_GRW0,
 	RESET_GRW0
 	
+};
+
+enum select_network_options {
+	CHANGE_IP,
+	CHANGE_PORT,
+	START_DUMP
 };
 
 enum select_output_options {

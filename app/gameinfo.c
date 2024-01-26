@@ -11,25 +11,11 @@
 
 
 int read_titleid(char* title_id) {
-	int dfd = sceIoDopen("gro0:/app");
-	if(dfd >= 0){
-		SceIoDirent ent;
-		int res = sceIoDread(dfd, &ent);
-		if(res >= 0) {
-			strncpy(title_id, ent.d_name, 12);
-			return 0;
-		}
-	}
-	
-	if(dfd >= 0)
-		sceIoDclose(dfd);
-	return dfd;	
-	
+	return read_first_filename("gro0:/app", title_id, 12);
 }
 
 int read_gameinfo(char* title_id, char* title) {
 	wait_for_partition("gro0:");
-	
 	// get title id from gro0:/app folder
 	int res = read_titleid(title_id);
 	sceClibPrintf("read_title_id: = %x\n", res);

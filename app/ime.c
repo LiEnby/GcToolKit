@@ -2,7 +2,9 @@
 #include <vita2d.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include "menu.h"
 
 #define IME_DIALOG_RESULT_NONE 0
 #define IME_DIALOG_RESULT_RUNNING 1
@@ -56,7 +58,7 @@ void utf8_to_utf16(uint8_t *src, uint16_t *dst) {
 	*dst = '\0';
 }
  
-void init_ime_dialog(char *title, char *initial_text, int max_text_length) {
+void init_ime_dialog(char *title, char *initial_text, int max_text_length, int type) {
     // Convert UTF8 to UTF16
 	utf8_to_utf16((uint8_t *)title, ime_title_utf16);
 	utf8_to_utf16((uint8_t *)initial_text, ime_initial_text_utf16);
@@ -67,7 +69,7 @@ void init_ime_dialog(char *title, char *initial_text, int max_text_length) {
 	param.sdkVersion = 0x03150021,
 	param.supportedLanguages = 0x0001FFFF;
 	param.languagesForced = SCE_TRUE;
-	param.type = SCE_IME_TYPE_DEFAULT;
+	param.type = type;
 	param.title = ime_title_utf16;
 	param.maxTextLength = max_text_length;
 	param.initialText = ime_initial_text_utf16;
@@ -84,6 +86,59 @@ void osl_osk_get_text(char *text){
 	strcpy(text,(char*)ime_input_text_utf8);
 }
 
+int open_ime_short(char* title, unsigned short* number) {
+    
+	sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
+    sceCommonDialogSetConfigParam(&(SceCommonDialogConfigParam){});
+   
+    int shown_dial = 0;
+	
+	char number_txt[0x800];
+	memset(number_txt, 0x00, sizeof(number_txt));
+	snprintf(number_txt, sizeof(number_txt), "%u", *number);
+	
+	do_ime();
+	
+	while (1) {
+        if(!shown_dial){
+            init_ime_dialog(title, number_txt, 5, SCE_IME_TYPE_NUMBER);
+			shown_dial=1;
+        }
+
+        SceCommonDialogStatus status = sceImeDialogGetStatus();
+       
+		if (status == IME_DIALOG_RESULT_FINISHED) {
+			SceImeDialogResult result;
+			memset(&result, 0, sizeof(SceImeDialogResult));
+			sceImeDialogGetResult(&result);
+
+			if (result.button == SCE_IME_DIALOG_BUTTON_CLOSE) {
+				status = IME_DIALOG_RESULT_CANCELED;
+				break;
+			} else {
+				osl_osk_get_text(number_txt);
+				
+				uint32_t num = atoi(number_txt);
+				if(num > 0xFFFF)
+					num = 0xFFFF;
+				*number = (unsigned short)num;
+				
+				break;
+			}
+
+			shown_dial = 0;
+			
+			
+		}
+        vita2d_common_dialog_update();
+		vita2d_swap_buffers();
+       
+    }
+	sceImeDialogTerm();
+	
+    return 0;
+}
+
 int open_ime(char* title, char* text, int max_len) {
     
 	sceAppUtilInit(&(SceAppUtilInitParam){}, &(SceAppUtilBootParam){});
@@ -91,9 +146,11 @@ int open_ime(char* title, char* text, int max_len) {
    
     int shown_dial = 0;
 	
+	do_ime();
+	
 	while (1) {
         if(!shown_dial){
-            init_ime_dialog(title, text, max_len);
+            init_ime_dialog(title, text, max_len, SCE_IME_TYPE_DEFAULT);
 			shown_dial=1;
         }
 
@@ -116,7 +173,7 @@ int open_ime(char* title, char* text, int max_len) {
 			
 			
 		}
-       
+
         vita2d_common_dialog_update();
 		vita2d_swap_buffers();
        

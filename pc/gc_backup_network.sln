@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "gc_backup_network", "gc_backup_network\gc_backup_network.csproj", "{293EC91E-1645-4E93-B116-82E2E9328264}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{293EC91E-1645-4E93-B116-82E2E9328264}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{293EC91E-1645-4E93-B116-82E2E9328264}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{293EC91E-1645-4E93-B116-82E2E9328264}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{293EC91E-1645-4E93-B116-82E2E9328264}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {060172C3-817D-47FD-B373-6CADF0713A74}
+	EndGlobalSection
+EndGlobal

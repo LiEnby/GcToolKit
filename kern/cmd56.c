@@ -92,3 +92,18 @@ int HasCmd20Captured() {
 	return HAS_CAPTURED_CMD20;
 }
 
+int StartGcAuthentication() {
+	return ksceSblGcAuthMgrGcAuthCartAuthentication(1);
+}
+
+int ClearFinalKeys() {
+	return ksceSblGcAuthMgrDrmBBClearCartSecret();
+}
+
+int GetFinalKeys(char* keys) {
+	char k_keys[0x20];
+	memset(k_keys, 0x00, sizeof(k_keys));
+	int res = ksceSblGcAuthMgrDrmBBGetCartSecret(k_keys);
+	ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
+	return res;
+}

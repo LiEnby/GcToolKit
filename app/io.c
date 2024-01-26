@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "io.h"
+#include "err.h"
 
 int has_gro0() {
 	return file_exist("gro0:");	
@@ -25,6 +26,24 @@ int wait_for_partition(char* partiton) {
 		sceKernelDelayThread(10000);
 	}
 	return file_exist(partiton);
+}
+
+int read_first_filename(char* path, char* output, size_t out_size) {
+	int ret;
+	int dfd = sceIoDopen(path);
+	if(dfd < 0) ERROR(dfd);
+	
+	SceIoDirent ent;
+	int res = sceIoDread(dfd, &ent);
+	if(res < 0) ERROR(res);
+	
+	strncpy(output, ent.d_name, out_size);
+	return 0;
+	
+error:
+	if(dfd >= 0)
+		sceIoDclose(dfd);
+	return dfd;	
 }
 
 void remove_illegal_chars(char* str) {
@@ -124,7 +143,7 @@ uint64_t get_free_space(const char* device) {
 		return 0xFFFFFFFFFFFFFFFF;
 	 
 	SceIoDevInfo info;
-	int res = ksceIoDevctl(dev, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
+	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
 	if (res < 0) {
 		free_space = 0;
 		max_size = 0;

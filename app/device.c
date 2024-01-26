@@ -10,6 +10,7 @@
 #include "crypto.h"
 #include "vci.h"
 #include "err.h"
+#include "net.h"
 
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
@@ -27,10 +28,78 @@ uint64_t device_size(char* block_device) {
 	return device_size;
 	
 }
+int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* output_path, GcKeys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+	int ret = 0;	
+	uint64_t total_read = 0;
+	
+	sceClibPrintf("Begining NETWORK dump of %s to %s:%u\n", block_device, ip_address, port);
+	
+	// open gc
+	int device_fd = OpenDevice(block_device);
+	sceClibPrintf("device_fd = %x\n", device_fd);
+	if(device_fd < 0) ERROR(device_fd);
+	
+	// get gc size
+	uint64_t device_size = 0;
+	GetDeviceSize(device_fd, &device_size);
+	sceClibPrintf("device_size = %llx\n", device_size);
+	if(device_size == 0) ERROR(-1);
+	
+	if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
+
+	// open socket
+	SceUID gc_sock = begin_file_send(ip_address, port, output_path, (keys != NULL) ? device_size + sizeof(VciFile) : device_size);
+	sceClibPrintf("gc_sock = %x\n", gc_sock);
+	if(gc_sock < 0) ERROR(gc_sock);
+
+	
+	if(keys != NULL) {
+		// generate VCI header
+		VciFile vci;
+		memset(&vci, 0x00, sizeof(VciFile));
+		
+		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic));
+		vci.version = 1;
+		vci.devicesize = device_size;
+		memcpy(&vci.keys, keys, sizeof(GcKeys));
+		
+		// write VCI header to file
+		int wr = file_send_data(gc_sock, &vci, sizeof(VciFile));
+		sceClibPrintf("wr = %x\n", wr);
+		
+		if(wr == 0) ERROR(-1);
+		if(wr != sizeof(VciFile)) ERROR(wr * -1);
+		if(wr < 0) ERROR(wr);
+	}
+
+	// enter read/write loop
+	do {
+		int rd = ReadDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // read raw from device
+		if(rd == 0) ERROR(-2);
+		if(rd < 0) ERROR(rd);
+
+		int wr = file_send_data(gc_sock, DEVICE_DUMP_BUFFER, rd); // send raw data
+		if(wr == 0) ERROR(-3);
+		if(wr < 0) ERROR(wr);
+		
+		total_read += wr;
+		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
+		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
+	} while(total_read < device_size);
+	
+error:
+	if(gc_sock >= 0)
+		end_file_send(gc_sock);
+	if(device_fd >= 0)
+		CloseDevice(device_fd);
+	
+	return ret;
+}
 
 int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
-	
+	uint64_t total_read = 0;
+
 	sceClibPrintf("Begining dump of %s to %s\n", block_device, output_path);
 	
 	// open image file
@@ -46,9 +115,11 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 	// get gc size
 	uint64_t device_size = 0;
 	GetDeviceSize(device_fd, &device_size);
-	sceClibPrintf("device_size = %x\n", device_size);
+	sceClibPrintf("device_size = %llx\n", device_size);
 	if(device_size == 0) ERROR(-1);
 	
+	if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
+
 	if(keys != NULL) {
 		// generate VCI header
 		VciFile vci;
@@ -67,10 +138,8 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 		if(wr != sizeof(VciFile)) ERROR(wr * -1);
 		if(wr < 0) ERROR(wr);		
 	}
-	uint64_t total_read = 0;
-	if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
 
-
+	// enter read/write loop
 	do {
 		int rd = ReadDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // read raw from device
 		if(rd == 0) ERROR(-2);

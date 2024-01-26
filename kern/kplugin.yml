@@ -6,10 +6,13 @@ f00dbridge:
   main:
     start: module_start
     stop: module_stop
-  modules:
+  libraries:
     libGcAuthDumper:
       syscall: true
       functions:
+        - StartGcAuthentication
+        - ClearFinalKeys
+        - GetFinalKeys
         - DecryptSecondaryKey0
         - GetLastCmd20Input
         - GetLastCmd20KeyId

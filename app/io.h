@@ -1,6 +1,7 @@
 
 #define MAX_PATH (512)
 
+
 int has_gro0();
 int has_grw0();
 int file_exist(char* path);
@@ -24,3 +25,4 @@ void umount_imc();
 void umount_devices();
 
 uint64_t get_free_space(const char* device);
+int read_first_filename(char* path, char* output, size_t out_size);

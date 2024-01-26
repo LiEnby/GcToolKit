@@ -1,3 +1,7 @@
+int StartGcAuthentication();
+int ClearFinalKeys();
+int GetFinalKeys(char* keys);
+
 int HasCmd20Captured();
 int GetLastCmd20KeyId();
 int GetLastCmd20Input(char* cmd20_input);
