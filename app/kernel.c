@@ -55,7 +55,7 @@ void load_kernel_modules() {
 int power_tick_thread(size_t args, void* argp) {
 	disable_power = 1;
 	while(disable_power){
-		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DISABLE_AUTO_SUSPEND);
+		sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
 		sceKernelDeleteThread(1000 * 1000 * 1);		
 	}
 	return 0;
