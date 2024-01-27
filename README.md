@@ -8,7 +8,14 @@ cmd56 authentication data + raw image of gc
 Allows you to backup a vita game cart to a USB Device via an OTG cable on Vita2K, USB Port on VitaTV, 
 or an offical memory card, or over the local network.
 
--- Difference between .vci and .psv formats: 
+
+-- OTG Compatiblity --
+
+This program allows backup vita GCs with a USB device connected via an OTG cable
+however this only works with OTG cables with an external power source; or "Y-Cable"
+for example this one for the Amazon Fire Stick https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT will work.
+
+-- Difference between .vci and .psv formats --
 
 The main difference is how the keys stored. 
 in psvgamesd, the result of gc_auth_mgr_sm function 0x20 is stored,
