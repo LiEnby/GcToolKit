@@ -29,4 +29,4 @@ this, also means that .VCI can be easily converted to .PSV,
 but .PSV cannot be converted back to VCI.
 
 
-![gc authentication diagram](https://silica.codes/Li/GcDumper/raw/branch/main/Diagram.png)
+![gc authentication diagram](https://silica.codes/Li/GcDumper/raw/branch/main/diagram.png)
