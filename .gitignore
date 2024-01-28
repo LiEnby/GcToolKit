@@ -54,9 +54,4 @@ dkms.conf
 
 kern/build/*
 app/build/*
-
-pc/gc_backup_network/BUILD/*
-pc/gc_backup_network/obj/*
-pc/gc_backup_network/bin/*
-
-*.user
+pc/build/*

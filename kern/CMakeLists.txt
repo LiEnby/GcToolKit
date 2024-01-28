@@ -43,9 +43,9 @@ target_link_libraries(${PROJECT_NAME}
 
 vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME}
   UNSAFE
-  CONFIG ${CMAKE_SOURCE_DIR}/kplugin.yml
+  CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/kplugin.yml
 )
-vita_create_stubs(${PROJECT_NAME}-stubs ${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/kplugin.yml
+vita_create_stubs(${PROJECT_NAME}-stubs ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/kplugin.yml
   KERNEL
 )
 

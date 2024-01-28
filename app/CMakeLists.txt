@@ -9,8 +9,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
 endif()
 
 project(GCDUMP)
-
-include("${VITASDK}/share/vita.cmake" REQUIRED)
+include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "GC Dumper")
 set(VITA_TITLEID  "GCDUMPER0")

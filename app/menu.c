@@ -22,7 +22,7 @@ static uint8_t options[100];
 				  int opt_y = y; \
 				  int increment_y = 20; \
 				  int total = 0; \
-				  memset(options, 0x00, sizeof(options));
+				  memset(options, 0x00, sizeof(options))
 #define ADDOPT(cond,x)if(cond) { \
 					draw_option(opt_y, x, option == *selected); \
 					opt_y += increment_y; \
@@ -35,7 +35,7 @@ static uint8_t options[100];
 				   } \
 				   option++ 
 
-#define RETURNOPT() return option;
+#define RETURNOPT() return option
 #define CALC_FIRST_OPTION() for(first_option = 0; (options[first_option] != 1 && first_option < sizeof(options)); first_option++)
 #define CALC_LAST_OPTION() for(last_option = sizeof(options); (options[last_option] != 1 && last_option > 0); last_option--)
 #define PROCESS_MENU(func, ...) \
@@ -73,7 +73,7 @@ static uint8_t options[100];
 					  if(selected < first_option) selected = last_option; \
 					  sceClibPrintf("selected after adjustment: %x\n", selected); \
 				  } \
-				  return selected;
+				  return selected
 
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");

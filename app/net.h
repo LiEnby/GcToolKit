@@ -3,7 +3,7 @@
 
 #define DEFAULT_IP "192.168.1.0"
 #define DEFAULT_PORT 46327
-
+#define FILENAME_SIZE ((0x210 - sizeof(uint16_t)) - sizeof(uint64_t))
 #define SEND_FILE_MAGIC 38717
 
 int init_network();
@@ -17,6 +17,6 @@ void end_file_send(int fstream);
 
 typedef struct send_file_packet {
 	uint16_t magic;
-	char filename[MAX_PATH];
+	char filename[FILENAME_SIZE];
 	uint64_t total_size;
 } send_file_packet;
