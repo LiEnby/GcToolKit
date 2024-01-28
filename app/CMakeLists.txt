@@ -46,6 +46,7 @@ add_executable(${PROJECT_NAME}
 	menu.c
 	ime.c
 	net.c
+	bgm.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -71,7 +72,11 @@ target_link_libraries(${PROJECT_NAME}
 	SceShellSvc_stub
 	SceAppUtil_stub
 	SceIme_stub
+	SceAudio_stub
 
+	soloud
+	pthread
+	stdc++
 	freetype
 	png
 	jpeg
@@ -97,5 +102,5 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} eboot.bin
   FILE res/background.png res/background.png
   FILE res/insertgc.png res/insertgc.png
   FILE res/menuoverlay.png res/menuoverlay.png
-  
+  FILE res/bgm.ogg res/bgm.ogg  
 )

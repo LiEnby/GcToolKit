@@ -15,6 +15,7 @@
 #include "io.h"
 #include "device.h"
 #include "net.h"
+#include "bgm.h"
 
 void get_output_filename(char* output, char* format, int size_output) {
 	char title_id[64];
@@ -215,12 +216,14 @@ int main() {
 	init_vita2d();
 	init_menus();
 	init_network();
+	init_sound();
 	
 	while(1) {
 		do_gc_insert_prompt();
 		handle_menu_select_option();
 	}
 	
+	term_sound();
 	term_menus();
 	term_vita2d();
 	term_network();

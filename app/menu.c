@@ -37,17 +37,21 @@ static uint8_t options[100];
 
 #define RETURNOPT() return option;
 #define CALC_FIRST_OPTION() for(first_option = 0; (options[first_option] != 1 && first_option < sizeof(options)); first_option++)
+#define CALC_LAST_OPTION() for(last_option = sizeof(options); (options[last_option] != 1 && last_option > 0); last_option--)
 #define PROCESS_MENU(func, ...) \
 					  int selected = 0; \
 					  memset(options, 0x00, sizeof(options));\
 					  func(&selected, __VA_ARGS__); \
 					  int first_option = 0;\
+					  int last_option = 0;\
 					  CALC_FIRST_OPTION(); \
+					  CALC_LAST_OPTION() \
 					  selected = first_option;\
 					  \
 					while (1) { \
 					  int total_options = func(&selected, __VA_ARGS__); \
 					  CALC_FIRST_OPTION(); \
+					  CALC_LAST_OPTION() \
 					  int ctrl = get_key(); \
 					  \
 					  switch(ctrl) { \
@@ -65,8 +69,8 @@ static uint8_t options[100];
 							 return selected; \
 					  } \
 					  sceClibPrintf("selected: %x\n", selected); \
-					  if(selected > total_options) selected = first_option; \
-					  if(selected < first_option) selected = first_option; \
+					  if(selected > last_option) selected = first_option; \
+					  if(selected < first_option) selected = last_option; \
 					  sceClibPrintf("selected after adjustment: %x\n", selected); \
 				  } \
 				  return selected;
