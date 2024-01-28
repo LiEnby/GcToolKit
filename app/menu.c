@@ -45,13 +45,13 @@ static uint8_t options[100];
 					  int first_option = 0;\
 					  int last_option = 0;\
 					  CALC_FIRST_OPTION(); \
-					  CALC_LAST_OPTION() \
+					  CALC_LAST_OPTION(); \
 					  selected = first_option;\
 					  \
 					while (1) { \
 					  int total_options = func(&selected, __VA_ARGS__); \
 					  CALC_FIRST_OPTION(); \
-					  CALC_LAST_OPTION() \
+					  CALC_LAST_OPTION(); \
 					  int ctrl = get_key(); \
 					  \
 					  switch(ctrl) { \
