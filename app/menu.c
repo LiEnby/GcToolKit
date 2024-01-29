@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 static vita2d_texture* insertgc_tex;
-static uint8_t options[100];
+static uint8_t options[0x100];
 
 #define DEFOPT(y) int option = 0;\
 				  int opt_y = y; \
@@ -49,7 +49,7 @@ static uint8_t options[100];
 					  selected = first_option;\
 					  \
 					while (1) { \
-					  int total_options = func(&selected, __VA_ARGS__); \
+					  func(&selected, __VA_ARGS__); \
 					  CALC_FIRST_OPTION(); \
 					  CALC_LAST_OPTION(); \
 					  int ctrl = get_key(); \
@@ -66,14 +66,14 @@ static uint8_t options[100];
 							 } while(selected < sizeof(options) && options[selected] == 0); \
 							 break; \
 						 case SCE_CTRL_CROSS: \
-							 return selected; \
+							 break; \
 					  } \
+					  if(ctrl == SCE_CTRL_CROSS) break; \
 					  sceClibPrintf("selected: %x\n", selected); \
 					  if(selected > last_option) selected = first_option; \
 					  if(selected < first_option) selected = last_option; \
 					  sceClibPrintf("selected after adjustment: %x\n", selected); \
-				  } \
-				  return selected
+				  }
 
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
@@ -99,11 +99,11 @@ int draw_gc_options(int* selected, char* title, uint8_t has_grw0, uint8_t has_me
 	ADDOPT(1, "Backup Game Cart Keys (.BIN)");
 
 	ADDOPT(has_mediaid, "Backup MediaId Section (.MEDIAID)");
-	ADDOPT(0 && has_mediaid, "Restore MediaId Section (.MEDIAID)");		
+	ADDOPT(has_mediaid, "Restore MediaId Section (.MEDIAID)");		
 	ADDOPT(has_mediaid, "Format MediaId Section");
 
 	ADDOPT(has_grw0, "Backup Writable Section (.IMG)");
-	ADDOPT(0 && has_grw0, "Restore Writable Section (.IMG)");
+	ADDOPT(has_grw0, "Restore Writable Section (.IMG)");
 	ADDOPT(has_grw0, "Format Writable Section");
 	
 	end_draw();
@@ -132,12 +132,32 @@ void do_gc_insert_prompt() {
 	wait_for_gc_auth();	
 }
 
+int draw_select_input_location(int* selected, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0) {
+	
+	start_draw();
+	draw_background();
+	
+	draw_title("Select input device ...");
+	
+	DEFOPT(240);
+	
+	ADDOPT(have_ux0, "Load from \"ux0\"");
+	ADDOPT(have_xmc, "Load from Sony Memory Card");
+	ADDOPT(have_usb, "Load from USB Drive");
+	ADDOPT(have_host0, "Load from Devkit Host0");
+	ADDOPT(1, "Refresh Devices");
+	
+	end_draw();
+	
+	RETURNOPT();
+}
+
 int draw_select_output_location(int* selected, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
 	
 	start_draw();
 	draw_background();
 	
-	draw_title("Select output location ...");
+	draw_title("Select output device ...");
 
 	char output_txt[128];
 	snprintf(output_txt, sizeof(output_txt), "\"%.45s\"", output_file);
@@ -156,6 +176,31 @@ int draw_select_output_location(int* selected, char* output_file, uint8_t have_u
 	end_draw();
 	
 	RETURNOPT();
+}
+
+
+int draw_select_file(int* selected, int window, char* input_folder, char* folders, size_t total_files) {
+	int ret = 0;
+	start_draw();
+	draw_background();
+	
+	char title[128];
+	snprintf(title, sizeof(title), "Select a file from: %.10s ...", input_folder);
+	draw_title(title);
+	
+	DEFOPT(120);
+	
+	for(int i = window; i <= window+50; i++) {
+		if(i > total_files) break;
+		
+		char file[MAX_PATH];
+		snprintf(file, sizeof(file), "%.45s", folders + (i * MAX_PATH));
+		ADDOPT(1, file);
+		
+	}
+	
+	end_draw();
+	RETURNOPT();		
 }
 
 
@@ -191,10 +236,29 @@ void draw_wipe_progress(char* device, char* output_filename, uint64_t progress, 
 	draw_background();
 	
 	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "Wiping %s ...", device);
+	snprintf(output_txt, sizeof(output_txt), "Formatting %s ...", device);
 	draw_title(output_txt);
 
-	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", output_filename);
+	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", device);
+	draw_text_center(200, output_txt);
+	
+	draw_progress_bar(210, progress, total);
+	snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0));
+	draw_text_center(260, output_txt);
+	
+	end_draw();
+}
+
+void draw_restore_progress(char* device, char* input_filename, uint64_t progress, uint64_t total) {
+	
+	start_draw();
+	draw_background();
+	
+	char output_txt[128];
+	snprintf(output_txt, sizeof(output_txt), "Restoring %.30s ...", device);
+	draw_title(output_txt);
+
+	snprintf(output_txt, sizeof(output_txt), "Reading \"%.30s\" ...", input_filename);
 	draw_text_center(200, output_txt);
 	
 	draw_progress_bar(210, progress, total);
@@ -249,6 +313,7 @@ void draw_confirmation_message(char* title, char* msg) {
 
 int do_network_options(char* ip_address, unsigned short port) {	
 	PROCESS_MENU(draw_network_settings, ip_address, port);
+	return selected;
 }
 
 int do_gc_options() {
@@ -266,6 +331,25 @@ int do_gc_options() {
 	uint8_t has_mediaid = device_exist(BLOCK_DEVICE_MEDIAID);
 	
 	PROCESS_MENU(draw_gc_options, title, has_grw0, has_mediaid);
+	return selected;
+}
+
+int do_select_file(char* folder, char* output) {
+	int window = 0;
+	size_t ttl_files = 0;	
+	static char files[MAX_PATH * 0x100];
+	
+	int res = get_files_in_folder(folder, files, &ttl_files, 0x100);
+	if(res < 0) return res;
+	if(ttl_files <= 0) return -2;
+	
+	PROCESS_MENU(draw_select_file, folder, files, window, ttl_files);
+	
+	sceClibPrintf("PROCESS_MENU_END\n", selected, files + (selected * MAX_PATH));
+	sceClibPrintf("Selected: %x %s\n", selected, files + (selected * MAX_PATH));
+	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);
+	
+	return selected;	
 }
 
 void do_ime() {
@@ -292,6 +376,28 @@ int do_device_wipe(char* block_device, uint8_t format) {
 	if(format)
 		FormatDevice(block_device);
 	
+	unlock_shell();
+
+	enable_power_off();
+
+	mount_gro0();
+	mount_grw0();
+	
+	umount_devices();
+	return res;
+}
+
+int do_device_restore(char* block_device, char* input_file) {
+	
+	umount_gro0();
+	umount_grw0();
+	
+	disable_power_off();
+
+	mount_devices();
+	
+	lock_shell();
+	int res = restore_device(block_device, input_file, draw_restore_progress);
 	unlock_shell();
 
 	enable_power_off();
@@ -338,7 +444,33 @@ int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_
 }
 
 
-int do_select_output_location(char* format, char* output, uint64_t device_size) {
+int do_select_input_location() {
+	
+	sceClibPrintf("mount_devices\n");
+	mount_devices();
+	
+	uint8_t ux_exist = file_exist("ux0:");
+	uint8_t xmc_exist = file_exist("xmc0:");
+	uint8_t uma_exist = file_exist("uma0:");
+	uint8_t host_exist = file_exist("host0:");
+	
+	PROCESS_MENU(draw_select_input_location, 
+				ux_exist, 
+				xmc_exist, 
+				uma_exist,
+				host_exist);
+	
+	return selected;
+}
+
+int do_error(int error) {
+	char msg[0x1028];	
+	snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", error);
+	do_confirm_message("Error!", msg);
+	return 0;
+}
+
+int do_select_output_location(char* output, uint64_t device_size) {
 	
 	sceClibPrintf("mount_devices\n");
 	mount_devices();
@@ -367,4 +499,6 @@ int do_select_output_location(char* format, char* output, uint64_t device_size) 
 				(uma_exist && uma_size >= device_size), 
 				host_exist, 
 				save_network);
+	
+	return selected;
 }

@@ -114,12 +114,12 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 	sceClibPrintf("gc_fd = %x\n", gc_fd);
 	if(gc_fd < 0) ERROR(gc_fd);
 
-	// open gc
+	// open device
 	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
 	sceClibPrintf("device_fd = %x\n", device_fd);
 	if(device_fd < 0) ERROR(device_fd);
 	
-	// get gc size
+	// get device size
 	uint64_t device_size = 0;
 	GetDeviceSize(device_fd, &device_size);
 	sceClibPrintf("device_size = %llx\n", device_size);
@@ -159,6 +159,58 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 		total_read += wr;
 		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
 	} while(total_read < device_size);
+	
+error:
+	if(gc_fd >= 0)
+		sceIoClose(gc_fd);
+	if(device_fd >= 0)
+		CloseDevice(device_fd);
+	
+	return ret;
+}
+
+int restore_device(char* block_device, char* input_path, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+	int ret = 0;
+	uint64_t total_write = 0;
+	
+	// sanity safety check
+	if(memcmp(block_device, "sdstor0:gcd", strlen("sdstor0:gcd")) != 0)
+		return -1; 
+	
+	sceClibPrintf("Begining restore of %s to %s\n", input_path, block_device);
+	
+	// open image file
+	SceUID gc_fd = sceIoOpen(input_path, SCE_O_RDONLY, 0777);
+	sceClibPrintf("gc_fd = %x\n", gc_fd);
+	if(gc_fd < 0) ERROR(gc_fd);
+
+	// open device
+	int device_fd = OpenDevice(block_device, SCE_O_WRONLY);
+	sceClibPrintf("device_fd = %x\n", device_fd);
+	if(device_fd < 0) ERROR(device_fd);
+	
+	// get device size
+	uint64_t device_size = 0;
+	GetDeviceSize(device_fd, &device_size);
+	sceClibPrintf("device_size = %llx\n", device_size);
+	if(device_size == 0) ERROR(-1);
+	
+	if(progress_callback != NULL) progress_callback(block_device, input_path, total_write, device_size);
+
+	// enter read/write loop
+	do {
+		int rd = sceIoRead(gc_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Read img data
+		if(rd == 0) ERROR(-3);
+		if(rd < 0) ERROR(rd);
+
+		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, rd); // Write raw data to device
+		if(wr == 0) ERROR(-2);
+		if(wr < 0) ERROR(wr);
+
+		
+		total_write += wr;
+		if(progress_callback != NULL) progress_callback(block_device, input_path, total_write, device_size);
+	} while(total_write < device_size);
 	
 error:
 	if(gc_fd >= 0)

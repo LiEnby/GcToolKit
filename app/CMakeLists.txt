@@ -11,7 +11,7 @@ endif()
 project(GCDUMP)
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-set(VITA_APP_NAME "GC Dumper")
+set(VITA_APP_NAME "GC Toolkit")
 set(VITA_TITLEID  "GCDUMPER0")
 
 set(VITA_VERSION  "01.00")

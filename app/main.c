@@ -114,7 +114,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	
 	int selected = -1;
 	while(1) {
-		selected = do_select_output_location(fmt, output_filename, total_device_size);
+		selected = do_select_output_location(output_filename, total_device_size);
 		
 		switch(selected) {
 			case DUMP_LOCATION_UX0:
@@ -137,11 +137,11 @@ void handle_menu_set_output(char* fmt, int what) {
 				remove_illegal_chars(output_filename);
 				continue;
 				break;
-			case RELOAD_DEVICES:
+			case O_RELOAD_DEVICES:
 				continue;
 				break;
 			default:
-				break;
+				return;
 		};
 		
 		break;
@@ -149,13 +149,22 @@ void handle_menu_set_output(char* fmt, int what) {
 	sceClibPrintf("output_device %s\n", output_device);
 
 	// get outfile
-	char out_dumpfile[MAX_PATH*3];
-	snprintf(out_dumpfile, sizeof(out_dumpfile), "%s%s", output_device, output_filename);
-	sceClibPrintf("what = %x, out_dumpfile = %s\n", what, out_dumpfile);
+	char output_folder[MAX_PATH*3];
+	
+	// create "device:bak" folder if not exist
+	if(selected != DUMP_LOCATION_NET) {
+		snprintf(output_folder, sizeof(output_folder), "%sbak", output_device);
+		sceIoMkdir(output_folder, 0777);
+	}
+	
+	// get full output path, device:bak/file.vci 
+	snprintf(output_folder, sizeof(output_folder), "%sbak/%s", output_device, output_filename);
+	
+	sceClibPrintf("what = %x, output_folder = %s\n", what, output_folder);
 
 	int res = -1;
 	if(selected != DUMP_LOCATION_NET) {
-		res = handle_dump_device(what, block_device, out_dumpfile, NULL, 0);
+		res = handle_dump_device(what, block_device, output_folder, NULL, 0);
 	}
 	else {
 		res = handle_menu_set_network_options(what, block_device, output_filename);
@@ -163,11 +172,10 @@ void handle_menu_set_output(char* fmt, int what) {
 	
 	char msg[0x1028];	
 	if(res < 0) {
-		snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", res);
-		do_confirm_message("Error!", msg);
+		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\" ...", out_dumpfile);
+		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\" ...", output_folder);
 		do_confirm_message("Backup Success!", msg);
 	}
 
@@ -189,13 +197,85 @@ void handle_wipe_option(int what) {
 		
 	char msg[0x1028];	
 	if(res < 0) {
-		snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", block_device, res);
-		do_confirm_message("Error!", msg);
+		do_error(res);
 	}
 	else{
 		snprintf(msg, sizeof(msg), "Formatted: \"%s\" ...", block_device);
 		do_confirm_message("Format Success!", msg);
 	}
+}
+
+void handle_select_file(int what, char* folder) {
+	char* block_device = NULL;
+	switch(what) {
+		case WRITE_MEDIAID:
+			block_device = BLOCK_DEVICE_MEDIAID;
+			break;
+		case WRITE_GRW0:
+			block_device = BLOCK_DEVICE_GRW0;
+			break;
+		default:
+			return;
+	}
+	
+	char file[MAX_PATH];
+	int selected = do_select_file(folder, file);
+	
+	if(selected < 0) {
+		do_error(selected);
+		return;
+	}
+	
+	char input_file[MAX_PATH];
+	snprintf(input_file, sizeof(input_file), "%s/%s", folder, file);
+	
+	int res = do_device_restore(block_device, input_file);
+	char msg[0x1028];	
+	if(res < 0) {
+		do_error(res);
+	}
+	else{
+		snprintf(msg, sizeof(msg), "Restored from: \"%.25s\" ...", input_file);
+		do_confirm_message("Restore Success!", msg);
+	}
+}
+
+void handle_select_input_device(int what) {
+
+	char* input_device = NULL;
+	int selected = -1;
+	while(1) {
+		selected = do_select_input_location();
+		
+		switch(selected) {
+			case RESTORE_LOCATION_UX0:
+				input_device = "ux0:";
+				break;
+			case RESTORE_LOCATION_XMC:
+				input_device = "xmc0:";
+				break;
+			case RESTORE_LOCATION_UMA:
+				input_device = "uma0:";
+				break;
+			case RESTORE_LOCATION_HOST:
+				input_device = "host0:";
+				break;
+			case I_RELOAD_DEVICES:
+				continue;
+				break;
+			default:
+				break;
+		};
+		
+		break;
+	};
+	// get infile
+	char input_folder[MAX_PATH];
+	
+	snprintf(input_folder, sizeof(input_folder), "%sbak", input_device);
+	sceIoMkdir(input_folder, 0777);
+	
+	handle_select_file(what, input_folder);
 }
 
 void handle_menu_select_option() {
@@ -211,17 +291,21 @@ void handle_menu_select_option() {
 			case DUMP_KEYS_ONLY:
 				fmt = "bin";
 				break;
+				
 			case DUMP_MEDIAID:
 				fmt = "mediaid";
 				break;
 			case WRITE_MEDIAID:
+				fmt = "mediaid";
 				break;
 			case RESET_MEDIAID:
 				break;
+				
 			case DUMP_GRW0:
 				fmt = "img";
 				break;
 			case WRITE_GRW0:
+				fmt = "img";
 				break;
 			case RESET_GRW0:
 				break;
@@ -235,7 +319,8 @@ void handle_menu_select_option() {
 		handle_menu_set_output(fmt, selected);
 	if(selected == RESET_MEDIAID || selected == RESET_GRW0)
 		handle_wipe_option(selected);
-
+	if(selected == WRITE_MEDIAID || selected == WRITE_GRW0)
+		handle_select_input_device(selected);
 }
 
 int main() {

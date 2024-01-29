@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include <vitasdk.h>
 #include <string.h>
 
@@ -20,8 +21,47 @@ int wait_for_partition(char* partiton) {
 	return file_exist(partiton);
 }
 
+int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders, size_t max_files) {
+	int ret = 0;
+	
+	// get total folder count
+	int found_files_count = 0;
+	memset(out_filenames, 0x00, MAX_PATH * max_files);
+	
+	// read file list 
+	int dfd = sceIoDopen(folder);
+	sceClibPrintf("sceIoDopen dfd: %x\n", dfd);
+	if(dfd < 0) ERROR(dfd);
+
+	SceIoDirent ent;
+	
+	for(int i = 0; i < max_files; i++) {
+		int res = sceIoDread(dfd, &ent);
+		sceClibPrintf("sceIoDread res: %x\n", res);
+		if(res < 0) ERROR(res);
+		if(res == 0) break;
+		
+		// ensure regular files
+		strncpy(out_filenames + (i * MAX_PATH), ent.d_name, MAX_PATH-1); 					
+		sceClibPrintf("ent.d_name: %s\n", ent.d_name);
+
+		found_files_count++;
+		sceClibPrintf("found_files_count: %x\n", found_files_count);
+	}
+	
+	*total_folders = (found_files_count -1);
+	sceIoDclose(dfd);
+	
+	return 0;
+	error:
+	sceClibPrintf("Error case reached: %x\n", ret);
+	if(dfd >= 0)
+		sceIoDclose(dfd);
+	return ret;	
+}
+
 int read_first_filename(char* path, char* output, size_t out_size) {
-	int ret;
+	int ret = 0;
 	int dfd = sceIoDopen(path);
 	if(dfd < 0) ERROR(dfd);
 	
@@ -30,7 +70,6 @@ int read_first_filename(char* path, char* output, size_t out_size) {
 	if(res < 0) ERROR(res);
 	
 	strncpy(output, ent.d_name, out_size);
-	return 0;
 	
 error:
 	if(dfd >= 0)
@@ -125,6 +164,13 @@ void mount_devices() {
 	if(res >= 0) wait_for_partition("xmc0:");	
 }
 
+uint64_t get_file_size(const char* filepath) {
+	SceIoStat stat;
+	int res = sceIoGetstat(filepath, &stat);
+	if(res >= 0)
+		return stat.st_size;
+	return 0;
+}
 
 uint64_t get_free_space(const char* device) {
 	uint64_t max_size = 0;

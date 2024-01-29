@@ -16,6 +16,7 @@ extern "C"
 		bgm.load("app0:/res/bgm.ogg");
 		bgm.setLooping(1);
 		soloud.play(bgm);
+		
 	}
 	
 	void term_sound() {
