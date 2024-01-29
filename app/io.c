@@ -5,14 +5,6 @@
 #include "io.h"
 #include "err.h"
 
-int has_gro0() {
-	return file_exist("gro0:");	
-}
-
-int has_grw0() {
-	return file_exist("grw0:");	
-}
-
 int file_exist(char* path) {
 	SceIoStat stat;
 	int res = sceIoGetstat(path, &stat);
@@ -21,9 +13,9 @@ int file_exist(char* path) {
 }
 
 int wait_for_partition(char* partiton) {
-	for(int i = 0; i < 300; i++) {
+	for(int i = 0; i < 50; i++) {
 		if(file_exist(partiton)) break;
-		sceKernelDelayThread(10000);
+		sceKernelDelayThread(5000);
 	}
 	return file_exist(partiton);
 }

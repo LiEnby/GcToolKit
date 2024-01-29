@@ -4,6 +4,7 @@ void do_gc_insert_prompt();
 int do_gc_options();
 int do_select_output_location(char* format, char* output, uint64_t device_size);
 int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port);
+int do_device_wipe(char* block_device, uint8_t format);
 void do_confirm_message(char* title, char* msg);
 int do_network_options(char* ip_address, unsigned short port);
 void do_ime();

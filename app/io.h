@@ -1,9 +1,5 @@
-
 #define MAX_PATH (512)
 
-
-int has_gro0();
-int has_grw0();
 int file_exist(char* path);
 void remove_illegal_chars(char* str);
 

@@ -15,11 +15,19 @@
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
+uint8_t device_exist(char* block_device) {
+	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
+	if(dfd < 0)
+		return 0;
+	CloseDevice(dfd);
+	return 1;
+}
+
 uint64_t device_size(char* block_device) {
 
 	uint64_t device_size = 0;
 
-	int dfd = OpenDevice(block_device);
+	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
 	if(dfd < 0)
 		return 0;
 	GetDeviceSize(dfd, &device_size);
@@ -35,7 +43,7 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 	sceClibPrintf("Begining NETWORK dump of %s to %s:%u\n", block_device, ip_address, port);
 	
 	// open gc
-	int device_fd = OpenDevice(block_device);
+	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
 	sceClibPrintf("device_fd = %x\n", device_fd);
 	if(device_fd < 0) ERROR(device_fd);
 	
@@ -107,7 +115,7 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 	if(gc_fd < 0) ERROR(gc_fd);
 
 	// open gc
-	int device_fd = OpenDevice(block_device);
+	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
 	sceClibPrintf("device_fd = %x\n", device_fd);
 	if(device_fd < 0) ERROR(device_fd);
 	
@@ -155,6 +163,48 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 error:
 	if(gc_fd >= 0)
 		sceIoClose(gc_fd);
+	if(device_fd >= 0)
+		CloseDevice(device_fd);
+	
+	return ret;
+}
+
+int wipe_device(char* block_device, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+	int ret = 0;
+	uint64_t total_write = 0;
+
+	// sanity safety check
+	if(memcmp(block_device, "sdstor0:gcd", strlen("sdstor0:gcd")) != 0)
+		return -1; 
+		
+	sceClibPrintf("Begining wipe of %s\n", block_device);
+	
+	// open device
+	int device_fd = OpenDevice(block_device, SCE_O_WRONLY); // SCARY
+	sceClibPrintf("device_fd = %x\n", device_fd);
+	if(device_fd < 0) ERROR(device_fd);
+	
+	// get device size
+	uint64_t device_size = 0;
+	GetDeviceSize(device_fd, &device_size);
+	sceClibPrintf("device_size = %llx\n", device_size);
+	if(device_size == 0) ERROR(-1);
+	
+	if(progress_callback != NULL) progress_callback(block_device, block_device, total_write, device_size);
+	memset(DEVICE_DUMP_BUFFER, 0x00, sizeof(DEVICE_DUMP_BUFFER));
+
+	// enter write loop
+	do {
+		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // write raw to device
+		if(wr == 0) ERROR(-2);
+		if(wr < 0) ERROR(wr);
+		
+		total_write += wr;
+		
+		if(progress_callback != NULL) progress_callback(block_device, block_device, total_write, device_size);
+	} while(total_write < device_size);
+	
+error:
 	if(device_fd >= 0)
 		CloseDevice(device_fd);
 	

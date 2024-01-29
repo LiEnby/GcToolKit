@@ -20,6 +20,7 @@ f00dbridge:
         - ResetCmd20Input
         - OpenDevice
         - ReadDevice
+        - WriteDevice
         - CloseDevice
         - GetDeviceSize
-        
+        - FormatDevice

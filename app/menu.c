@@ -100,11 +100,11 @@ int draw_gc_options(int* selected, char* title, uint8_t has_grw0, uint8_t has_me
 
 	ADDOPT(has_mediaid, "Backup MediaId Section (.MEDIAID)");
 	ADDOPT(0 && has_mediaid, "Restore MediaId Section (.MEDIAID)");		
-	ADDOPT(0 && has_mediaid, "Format MediaId Section");
+	ADDOPT(has_mediaid, "Format MediaId Section");
 
 	ADDOPT(has_grw0, "Backup Writable Section (.IMG)");
 	ADDOPT(0 && has_grw0, "Restore Writable Section (.IMG)");
-	ADDOPT(0 && has_grw0, "Format Writable Section");
+	ADDOPT(has_grw0, "Format Writable Section");
 	
 	end_draw();
 	
@@ -185,6 +185,24 @@ int draw_network_settings(int* selected, char* ip_address, unsigned short port) 
 	RETURNOPT();
 }
 
+void draw_wipe_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
+	
+	start_draw();
+	draw_background();
+	
+	char output_txt[128];
+	snprintf(output_txt, sizeof(output_txt), "Wiping %s ...", device);
+	draw_title(output_txt);
+
+	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", output_filename);
+	draw_text_center(200, output_txt);
+	
+	draw_progress_bar(210, progress, total);
+	snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0));
+	draw_text_center(260, output_txt);
+	
+	end_draw();
+}
 
 void draw_dump_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
 	
@@ -236,12 +254,18 @@ int do_network_options(char* ip_address, unsigned short port) {
 int do_gc_options() {
 	char title_id[64];
 	char title[64];
+
+	mount_gro0();
+	mount_grw0();
+
 	read_gameinfo(title_id, title);
 	
-	uint8_t have_grw0 = has_grw0();
 	remove_illegal_chars(title);
 	
-	PROCESS_MENU(draw_gc_options, title, have_grw0, 1);
+	uint8_t has_grw0 = device_exist(BLOCK_DEVICE_GRW0);
+	uint8_t has_mediaid = device_exist(BLOCK_DEVICE_MEDIAID);
+	
+	PROCESS_MENU(draw_gc_options, title, has_grw0, has_mediaid);
 }
 
 void do_ime() {
@@ -252,6 +276,31 @@ void do_ime() {
 void do_confirm_message(char* title, char* msg) {
 	draw_confirmation_message(title, msg);
 	get_key();
+}
+
+int do_device_wipe(char* block_device, uint8_t format) {
+	umount_gro0();
+	umount_grw0();
+	
+	disable_power_off();
+
+	mount_devices();
+	
+	lock_shell();
+	int res = wipe_device(block_device, draw_wipe_progress);
+	
+	if(format)
+		FormatDevice(block_device);
+	
+	unlock_shell();
+
+	enable_power_off();
+
+	mount_gro0();
+	mount_grw0();
+	
+	umount_devices();
+	return res;
 }
 
 int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {

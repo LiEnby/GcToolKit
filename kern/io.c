@@ -4,9 +4,9 @@
 #include <vitasdkkern.h>
 
 
-int k_open_device(char* device) {
+int k_open_device(char* device, int permission) {
 	int prev = ksceKernelSetPermission(0x80);
-	int fd = ksceIoOpen(device, SCE_O_RDONLY, 0777);
+	int fd = ksceIoOpen(device, permission, 0777);
 	ksceKernelSetPermission(prev);
 	return fd;
 }
@@ -14,6 +14,13 @@ int k_open_device(char* device) {
 int k_read_device(int device_handle, uint8_t* data, int size) {
 	int prev = ksceKernelSetPermission(0x80);
 	int res = ksceIoRead(device_handle, data, size);
+	ksceKernelSetPermission(prev);
+	return res;
+}
+
+int k_write_device(int device_handle, uint8_t* data, int size) {
+	int prev = ksceKernelSetPermission(0x80);
+	int res = ksceIoWrite(device_handle, data, size);
 	ksceKernelSetPermission(prev);
 	return res;
 }
@@ -36,13 +43,29 @@ uint64_t k_get_device_size(int device_handle) {
 
 // io syscalls
 
-int OpenDevice(char* device) {
+int OpenDevice(char* device, int permission) {
 	static char k_device[1028];
 	
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	
-	return k_open_device(k_device);
+	return k_open_device(k_device, permission);
 }
+
+
+int WriteDevice(int device_handle, uint8_t* data, int size) {
+	void* k_data = NULL;
+	size_t k_size = 0;
+	uint32_t k_offset = 0;
+	
+	int uid = ksceKernelUserMap("F00DBRIDGE_WRITE", 3, data, size, &k_data, &k_size, &k_offset);
+	if(uid < 0)
+		return uid;
+	int res = k_write_device(device_handle, (k_data + k_offset) , size);
+	ksceKernelMemBlockRelease(uid);
+	
+	return res;
+}
+
 
 int ReadDevice(int device_handle, uint8_t* data, int size) {
 	void* k_data = NULL;

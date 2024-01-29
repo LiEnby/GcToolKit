@@ -82,8 +82,8 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		int connectionFd = ACCEPT_SOCKET(listenFd);
-		pthread_t thread_fd;
-		pthread_create(&thread_fd, NULL, receive_file, &connectionFd);
+		pthread_t threadFd;
+		pthread_create(&threadFd, NULL, receive_file, &connectionFd);
 		sleep(1);
 	}
 	

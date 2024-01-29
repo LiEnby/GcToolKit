@@ -16,6 +16,7 @@
 #include "device.h"
 #include "net.h"
 #include "bgm.h"
+#include "f00dbridge.h"
 
 void get_output_filename(char* output, char* format, int size_output) {
 	char title_id[64];
@@ -172,6 +173,31 @@ void handle_menu_set_output(char* fmt, int what) {
 
 
 }
+void handle_wipe_option(int what) {
+	char* block_device = NULL;
+	switch(what) {
+		case RESET_MEDIAID:
+			block_device = BLOCK_DEVICE_MEDIAID;
+			break;
+		case RESET_GRW0:
+			block_device = BLOCK_DEVICE_GRW0;
+			break;
+		default:
+			return;
+	}
+	int res = do_device_wipe(block_device, (what == RESET_GRW0) );
+		
+	char msg[0x1028];	
+	if(res < 0) {
+		snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", block_device, res);
+		do_confirm_message("Error!", msg);
+	}
+	else{
+		snprintf(msg, sizeof(msg), "Formatted: \"%s\" ...", block_device);
+		do_confirm_message("Format Success!", msg);
+	}
+}
+
 void handle_menu_select_option() {
 	
 	char* fmt = "";
@@ -207,6 +233,8 @@ void handle_menu_select_option() {
 	};
 	if(selected == DUMP_WHOLE_GC || selected == DUMP_KEYS_ONLY || selected == DUMP_MEDIAID || selected == DUMP_GRW0)
 		handle_menu_set_output(fmt, selected);
+	if(selected == RESET_MEDIAID || selected == RESET_GRW0)
+		handle_wipe_option(selected);
 
 }
 
