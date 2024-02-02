@@ -12,7 +12,6 @@
 #include "draw.h"
 #include "menu.h"
 #include "ime.h"
-#include "io.h"
 #include "device.h"
 #include "net.h"
 #include "bgm.h"
@@ -207,19 +206,29 @@ void handle_wipe_option(int what) {
 
 void handle_select_file(int what, char* folder) {
 	char* block_device = NULL;
+	char* extension = NULL;
 	switch(what) {
 		case WRITE_MEDIAID:
 			block_device = BLOCK_DEVICE_MEDIAID;
+			extension = ".mediaid";
 			break;
 		case WRITE_GRW0:
 			block_device = BLOCK_DEVICE_GRW0;
+			extension = ".img";
 			break;
 		default:
 			return;
 	}
 	
+	// get total size
+	uint64_t total_device_size = 0;
+	if(block_device != NULL)
+		total_device_size = device_size(block_device);
+	sceClibPrintf("total_device_size %llx\n", total_device_size);
+	
+	// show file selection
 	char file[MAX_PATH];
-	int selected = do_select_file(folder, file);
+	int selected = do_select_file(folder, file, extension, total_device_size);
 	
 	if(selected < 0) {
 		do_error(selected);

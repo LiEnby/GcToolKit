@@ -21,11 +21,11 @@ int wait_for_partition(char* partiton) {
 	return file_exist(partiton);
 }
 
-int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders, size_t max_files) {
+int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders, SearchFilter* filter, size_t max_files) {
 	int ret = 0;
 	
 	// get total folder count
-	int found_files_count = 0;
+	*total_folders = 0;
 	memset(out_filenames, 0x00, MAX_PATH * max_files);
 	
 	// read file list 
@@ -40,17 +40,50 @@ int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders
 		sceClibPrintf("sceIoDread res: %x\n", res);
 		if(res < 0) ERROR(res);
 		if(res == 0) break;
+		if(ent.d_name == NULL) break;
 		
-		// ensure regular files
-		strncpy(out_filenames + (i * MAX_PATH), ent.d_name, MAX_PATH-1); 					
+		if(filter != NULL) {
+			// ensure file is above a certain size
+			if(ent.d_stat.st_size > filter->max_filesize) {
+				sceClibPrintf("%s is too big\n", ent.d_name);
+				continue;
+			}
+			
+			// match only files
+			if(filter->file_only && SCE_S_ISDIR(ent.d_stat.st_mode)) {
+				sceClibPrintf("%s is directory\n", ent.d_name);
+				continue;				
+			}
+			
+			// match only specific file extension logic
+			if(filter->match_extension[0] != '*') { 
+				size_t dir_name_length = strlen(ent.d_name);
+				size_t extension_length = strlen(filter->match_extension);
+
+				sceClibPrintf("dir_name_length = %x\n", dir_name_length);
+				sceClibPrintf("extension_length = %x\n", extension_length);
+				
+				if( strcasecmp (ent.d_name + (dir_name_length - extension_length), filter->match_extension) != 0 ) {
+					sceClibPrintf("%s is not extension: %s\n", ent.d_name, filter->match_extension);
+					continue;
+				}
+			}
+			
+		}
+		sceClibPrintf("%s passed all filter checks\n", ent.d_name);
+		
+		strncpy(out_filenames + (*total_folders * MAX_PATH), ent.d_name, MAX_PATH-1); 					
 		sceClibPrintf("ent.d_name: %s\n", ent.d_name);
 
-		found_files_count++;
-		sceClibPrintf("found_files_count: %x\n", found_files_count);
+		*total_folders += 1;
+		sceClibPrintf("total_folders: %x\n", *total_folders);
 	}
 	
-	*total_folders = (found_files_count -1);
-	sceIoDclose(dfd);
+	ret = sceIoDclose(dfd);
+	sceClibPrintf("sceIoDclose: %x\n", ret);
+	if(ret > 0) ERROR(ret);
+	
+	*total_folders -= 1;
 	
 	return 0;
 	error:
@@ -74,7 +107,7 @@ int read_first_filename(char* path, char* output, size_t out_size) {
 error:
 	if(dfd >= 0)
 		sceIoDclose(dfd);
-	return dfd;	
+	return ret;	
 }
 
 void remove_illegal_chars(char* str) {

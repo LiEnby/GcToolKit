@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 static vita2d_texture* insertgc_tex;
-static uint8_t options[0x100];
+static uint8_t options[0x1000];
 
 #define DEFOPT(y) int option = 0;\
 				  int opt_y = y; \
@@ -38,10 +38,12 @@ static uint8_t options[0x100];
 #define RETURNOPT() return option
 #define CALC_FIRST_OPTION() for(first_option = 0; (options[first_option] != 1 && first_option < sizeof(options)); first_option++)
 #define CALC_LAST_OPTION() for(last_option = sizeof(options); (options[last_option] != 1 && last_option > 0); last_option--)
+#define WINDOW_SIZE (20)
 #define PROCESS_MENU(func, ...) \
+					  int window = 0; \
 					  int selected = 0; \
 					  memset(options, 0x00, sizeof(options));\
-					  func(&selected, __VA_ARGS__); \
+					  int total_options = func(&selected, &window, __VA_ARGS__); \
 					  int first_option = 0;\
 					  int last_option = 0;\
 					  CALC_FIRST_OPTION(); \
@@ -49,7 +51,7 @@ static uint8_t options[0x100];
 					  selected = first_option;\
 					  \
 					while (1) { \
-					  func(&selected, __VA_ARGS__); \
+					  total_options = func(&selected, &window, __VA_ARGS__); \
 					  CALC_FIRST_OPTION(); \
 					  CALC_LAST_OPTION(); \
 					  int ctrl = get_key(); \
@@ -69,10 +71,20 @@ static uint8_t options[0x100];
 							 break; \
 					  } \
 					  if(ctrl == SCE_CTRL_CROSS) break; \
+					  if(selected > last_option)  { \
+						selected = last_option; \
+						\
+						if(total_options > WINDOW_SIZE) \
+							window++; \
+					  } \
+					  if(selected < first_option) { \
+						selected = first_option; \
+						\
+						if(window != first_option) \
+							window--; \
+					  } \
 					  sceClibPrintf("selected: %x\n", selected); \
-					  if(selected > last_option) selected = first_option; \
-					  if(selected < first_option) selected = last_option; \
-					  sceClibPrintf("selected after adjustment: %x\n", selected); \
+					  sceClibPrintf("window: %x\n", window); \
 				  }
 
 void init_menus() {
@@ -85,7 +97,7 @@ void term_menus() {
 }
 
 
-int draw_gc_options(int* selected, char* title, uint8_t has_grw0, uint8_t has_mediaid) {
+int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, uint8_t has_mediaid) {
 	start_draw();
 	draw_background();
 
@@ -132,7 +144,7 @@ void do_gc_insert_prompt() {
 	wait_for_gc_auth();	
 }
 
-int draw_select_input_location(int* selected, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0) {
+int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0) {
 	
 	start_draw();
 	draw_background();
@@ -152,7 +164,7 @@ int draw_select_input_location(int* selected, uint8_t have_ux0, uint8_t have_xmc
 	RETURNOPT();
 }
 
-int draw_select_output_location(int* selected, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
+int draw_select_output_location(int* selected, int* window, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
 	
 	start_draw();
 	draw_background();
@@ -179,32 +191,37 @@ int draw_select_output_location(int* selected, char* output_file, uint8_t have_u
 }
 
 
-int draw_select_file(int* selected, int window, char* input_folder, char* folders, size_t total_files) {
-	int ret = 0;
+int draw_select_file(int* selected, int* window, char* input_folder, char* folders, size_t total_files) {
 	start_draw();
 	draw_background();
 	
 	char title[128];
-	snprintf(title, sizeof(title), "Select a file from: %.10s ...", input_folder);
+	snprintf(title, sizeof(title), "Select a file from: %.15s ...", input_folder);
 	draw_title(title);
 	
-	DEFOPT(120);
+	DEFOPT(110);
+
+	// check if window - total_files is less than the window size.	
+	// reset window to window_size if it is
+	if( *window > (total_files % WINDOW_SIZE) ) {
+		*window = (total_files % WINDOW_SIZE);
+	}
 	
-	for(int i = window; i <= window+50; i++) {
+	for(int i = *window; i <= *window + WINDOW_SIZE; i++) {
 		if(i > total_files) break;
 		
 		char file[MAX_PATH];
 		snprintf(file, sizeof(file), "%.45s", folders + (i * MAX_PATH));
 		ADDOPT(1, file);
-		
 	}
 	
 	end_draw();
+	
 	RETURNOPT();		
 }
 
 
-int draw_network_settings(int* selected, char* ip_address, unsigned short port) {
+int draw_network_settings(int* selected, int* window, char* ip_address, unsigned short port) {
 	
 	start_draw();
 	draw_background();
@@ -334,21 +351,26 @@ int do_gc_options() {
 	return selected;
 }
 
-int do_select_file(char* folder, char* output) {
-	int window = 0;
-	size_t ttl_files = 0;	
-	static char files[MAX_PATH * 0x100];
+int do_select_file(char* folder, char* output, char* extension, uint64_t max_size) {
+	size_t total_files = 0;	
+	static char files[MAX_PATH * sizeof(options)];
 	
-	int res = get_files_in_folder(folder, files, &ttl_files, 0x100);
+	SearchFilter filter;
+	memset(&filter, 0x00, sizeof(SearchFilter));
+	filter.max_filesize = max_size;
+	filter.file_only = 1;
+	strncpy(filter.match_extension, extension, sizeof(filter.match_extension));
+	
+	int res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
+	
+	sceClibPrintf("get_files_in_folder = %x\n", res);
 	if(res < 0) return res;
-	if(ttl_files <= 0) return -2;
+	if(total_files <= 0) return -2;
 	
-	PROCESS_MENU(draw_select_file, folder, files, window, ttl_files);
+	sceClibPrintf("total_files: %x\n", total_files);
 	
-	sceClibPrintf("PROCESS_MENU_END\n", selected, files + (selected * MAX_PATH));
-	sceClibPrintf("Selected: %x %s\n", selected, files + (selected * MAX_PATH));
-	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);
-	
+	PROCESS_MENU(draw_select_file, folder, files, total_files);
+	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);	
 	return selected;	
 }
 
@@ -495,7 +517,7 @@ int do_select_output_location(char* output, uint64_t device_size) {
 	
 	PROCESS_MENU(draw_select_output_location, output, 
 				(ux_exist  && ux_size >= device_size), 
-				(xmc_exist && xmc_size >= device_size ), 
+				(xmc_exist && xmc_size >= device_size), 
 				(uma_exist && uma_size >= device_size), 
 				host_exist, 
 				save_network);

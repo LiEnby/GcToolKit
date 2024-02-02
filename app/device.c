@@ -110,9 +110,9 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 	sceClibPrintf("Begining dump of %s to %s\n", block_device, output_path);
 	
 	// open image file
-	SceUID gc_fd = sceIoOpen(output_path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-	sceClibPrintf("gc_fd = %x\n", gc_fd);
-	if(gc_fd < 0) ERROR(gc_fd);
+	SceUID img_fd = sceIoOpen(output_path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
+	sceClibPrintf("img_fd = %x\n", img_fd);
+	if(img_fd < 0) ERROR(img_fd);
 
 	// open device
 	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
@@ -138,7 +138,7 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 		memcpy(&vci.keys, keys, sizeof(GcKeys));
 		
 		// write VCI header to file
-		int wr = sceIoWrite(gc_fd, &vci, sizeof(VciFile));
+		int wr = sceIoWrite(img_fd, &vci, sizeof(VciFile));
 		sceClibPrintf("wr = %x\n", wr);
 		
 		if(wr == 0) ERROR(-1);
@@ -152,7 +152,7 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 		if(rd == 0) ERROR(-2);
 		if(rd < 0) ERROR(rd);
 
-		int wr = sceIoWrite(gc_fd, DEVICE_DUMP_BUFFER, rd); // write raw data
+		int wr = sceIoWrite(img_fd, DEVICE_DUMP_BUFFER, rd); // write raw data
 		if(wr == 0) ERROR(-3);
 		if(wr < 0) ERROR(wr);
 		
@@ -161,8 +161,8 @@ int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*prog
 	} while(total_read < device_size);
 	
 error:
-	if(gc_fd >= 0)
-		sceIoClose(gc_fd);
+	if(img_fd >= 0)
+		sceIoClose(img_fd);
 	if(device_fd >= 0)
 		CloseDevice(device_fd);
 	
@@ -179,10 +179,14 @@ int restore_device(char* block_device, char* input_path, void (*progress_callbac
 	
 	sceClibPrintf("Begining restore of %s to %s\n", input_path, block_device);
 	
+	// get image file size
+	uint64_t img_file_sz = get_file_size(input_path);
+	sceClibPrintf("img_file_sz = %llx\n", img_file_sz);
+	
 	// open image file
-	SceUID gc_fd = sceIoOpen(input_path, SCE_O_RDONLY, 0777);
-	sceClibPrintf("gc_fd = %x\n", gc_fd);
-	if(gc_fd < 0) ERROR(gc_fd);
+	SceUID img_fd = sceIoOpen(input_path, SCE_O_RDONLY, 0777);
+	sceClibPrintf("img_fd = %x\n", img_fd);
+	if(img_fd < 0) ERROR(img_fd);
 
 	// open device
 	int device_fd = OpenDevice(block_device, SCE_O_WRONLY);
@@ -194,17 +198,18 @@ int restore_device(char* block_device, char* input_path, void (*progress_callbac
 	GetDeviceSize(device_fd, &device_size);
 	sceClibPrintf("device_size = %llx\n", device_size);
 	if(device_size == 0) ERROR(-1);
+	if(img_file_sz > device_size) ERROR(-2);
 	
 	if(progress_callback != NULL) progress_callback(block_device, input_path, total_write, device_size);
 
 	// enter read/write loop
 	do {
-		int rd = sceIoRead(gc_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Read img data
-		if(rd == 0) ERROR(-3);
+		memset(DEVICE_DUMP_BUFFER, 0x00, sizeof(DEVICE_DUMP_BUFFER));
+		int rd = sceIoRead(img_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Read img data
 		if(rd < 0) ERROR(rd);
 
-		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, rd); // Write raw data to device
-		if(wr == 0) ERROR(-2);
+		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Write raw data to device
+		if(wr == 0) ERROR(-3);
 		if(wr < 0) ERROR(wr);
 
 		
@@ -213,8 +218,8 @@ int restore_device(char* block_device, char* input_path, void (*progress_callbac
 	} while(total_write < device_size);
 	
 error:
-	if(gc_fd >= 0)
-		sceIoClose(gc_fd);
+	if(img_fd >= 0)
+		sceIoClose(img_fd);
 	if(device_fd >= 0)
 		CloseDevice(device_fd);
 	
