@@ -191,7 +191,7 @@ int draw_select_output_location(int* selected, int* window, char* output_file, u
 }
 
 
-int draw_select_file(int* selected, int* window, char* input_folder, char* folders, size_t total_files) {
+int draw_select_file(int* selected, int* window, char* input_folder, char* folders, int total_files) {
 	start_draw();
 	draw_background();
 	
@@ -208,7 +208,7 @@ int draw_select_file(int* selected, int* window, char* input_folder, char* folde
 	}
 	
 	for(int i = *window; i <= *window + WINDOW_SIZE; i++) {
-		if(i > total_files) break;
+		if(i >= total_files) break;
 		
 		char file[MAX_PATH];
 		snprintf(file, sizeof(file), "%.45s", folders + (i * MAX_PATH));
@@ -352,7 +352,7 @@ int do_gc_options() {
 }
 
 int do_select_file(char* folder, char* output, char* extension, uint64_t max_size) {
-	size_t total_files = 0;	
+	int total_files = 0;	
 	static char files[MAX_PATH * sizeof(options)];
 	
 	SearchFilter filter;

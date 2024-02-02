@@ -21,7 +21,7 @@ int wait_for_partition(char* partiton) {
 	return file_exist(partiton);
 }
 
-int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders, SearchFilter* filter, size_t max_files) {
+int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, SearchFilter* filter, size_t max_files) {
 	int ret = 0;
 	
 	// get total folder count
@@ -82,8 +82,6 @@ int get_files_in_folder(char* folder, char* out_filenames, size_t* total_folders
 	ret = sceIoDclose(dfd);
 	sceClibPrintf("sceIoDclose: %x\n", ret);
 	if(ret > 0) ERROR(ret);
-	
-	*total_folders -= 1;
 	
 	return 0;
 	error:
