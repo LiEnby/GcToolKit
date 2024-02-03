@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "io.h"
+#include "log.h"
 #include "err.h"
 
 int file_exist(char* path) {
@@ -30,14 +31,14 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 	
 	// read file list 
 	int dfd = sceIoDopen(folder);
-	sceClibPrintf("sceIoDopen dfd: %x\n", dfd);
+	PRINT_STR("sceIoDopen dfd: %x\n", dfd);
 	if(dfd < 0) ERROR(dfd);
 
 	SceIoDirent ent;
 	
 	for(int i = 0; i < max_files; i++) {
 		int res = sceIoDread(dfd, &ent);
-		sceClibPrintf("sceIoDread res: %x\n", res);
+		PRINT_STR("sceIoDread res: %x\n", res);
 		if(res < 0) ERROR(res);
 		if(res == 0) break;
 		if(ent.d_name == NULL) break;
@@ -45,13 +46,13 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 		if(filter != NULL) {
 			// ensure file is above a certain size
 			if(ent.d_stat.st_size > filter->max_filesize) {
-				sceClibPrintf("%s is too big\n", ent.d_name);
+				PRINT_STR("%s is too big\n", ent.d_name);
 				continue;
 			}
 			
 			// match only files
 			if(filter->file_only && SCE_S_ISDIR(ent.d_stat.st_mode)) {
-				sceClibPrintf("%s is directory\n", ent.d_name);
+				PRINT_STR("%s is directory\n", ent.d_name);
 				continue;				
 			}
 			
@@ -60,32 +61,32 @@ int get_files_in_folder(char* folder, char* out_filenames, int* total_folders, S
 				size_t dir_name_length = strlen(ent.d_name);
 				size_t extension_length = strlen(filter->match_extension);
 
-				sceClibPrintf("dir_name_length = %x\n", dir_name_length);
-				sceClibPrintf("extension_length = %x\n", extension_length);
+				PRINT_STR("dir_name_length = %x\n", dir_name_length);
+				PRINT_STR("extension_length = %x\n", extension_length);
 				
 				if( strcasecmp (ent.d_name + (dir_name_length - extension_length), filter->match_extension) != 0 ) {
-					sceClibPrintf("%s is not extension: %s\n", ent.d_name, filter->match_extension);
+					PRINT_STR("%s is not extension: %s\n", ent.d_name, filter->match_extension);
 					continue;
 				}
 			}
 			
 		}
-		sceClibPrintf("%s passed all filter checks\n", ent.d_name);
+		PRINT_STR("%s passed all filter checks\n", ent.d_name);
 		
 		strncpy(out_filenames + (*total_folders * MAX_PATH), ent.d_name, MAX_PATH-1); 					
-		sceClibPrintf("ent.d_name: %s\n", ent.d_name);
+		PRINT_STR("ent.d_name: %s\n", ent.d_name);
 
 		*total_folders += 1;
-		sceClibPrintf("total_folders: %x\n", *total_folders);
+		PRINT_STR("total_folders: %x\n", *total_folders);
 	}
 	
 	ret = sceIoDclose(dfd);
-	sceClibPrintf("sceIoDclose: %x\n", ret);
+	PRINT_STR("sceIoDclose: %x\n", ret);
 	if(ret > 0) ERROR(ret);
 	
 	return 0;
 	error:
-	sceClibPrintf("Error case reached: %x\n", ret);
+	PRINT_STR("Error case reached: %x\n", ret);
 	if(dfd >= 0)
 		sceIoDclose(dfd);
 	return ret;	

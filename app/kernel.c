@@ -5,6 +5,7 @@
 #include <string.h>
 #include <vitasdk.h>
 #include "err.h"
+#include "log.h"
 
 static uint8_t disable_power = 0;
 
@@ -13,7 +14,7 @@ int kernel_started() {
 	memset(buffer, 0x00, sizeof(buffer));
 	
 	SceUID uid = _vshKernelSearchModuleByName("f00dbridge", buffer);
-	sceClibPrintf("_vshKernelSearchModuleByName = %x\n", uid);
+	PRINT_STR("_vshKernelSearchModuleByName = %x\n", uid);
 	
 	
 	if(uid >= 0) // started already
@@ -35,12 +36,12 @@ void load_kernel_modules() {
 		// load psp2spl
 		snprintf(kplugin_path, sizeof(kplugin_path), "ux0:app/%s/psp2spl.skprx", titleid);
 		SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-		sceClibPrintf("start %s = %x\n", kplugin_path, uid);
+		PRINT_STR("start %s = %x\n", kplugin_path, uid);
 		
 		// load f00dbridge
 		snprintf(kplugin_path, sizeof(kplugin_path), "ux0:app/%s/kplugin.skprx", titleid);
 		uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-		sceClibPrintf("start %s = %x\n", kplugin_path, uid);
+		PRINT_STR("start %s = %x\n", kplugin_path, uid);
 		if(uid < 0) return;
 		
 		// restart this application

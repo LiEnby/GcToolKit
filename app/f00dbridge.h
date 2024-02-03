@@ -1,4 +1,4 @@
-int StartGcAuthentication();
+int ResetGc();
 int ClearFinalKeys();
 int GetFinalKeys(char* keys);
 

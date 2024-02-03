@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "err.h"
 #include "net.h"
+#include "log.h"
 
 static uint8_t init = 0;
 uint8_t connected = 0;
@@ -19,13 +20,13 @@ int init_network() {
 	param.flags = 0;
 	
 	int loadModule = sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
-	sceClibPrintf("sceSysmoduleLoadModule = %x\n", loadModule);
+	PRINT_STR("sceSysmoduleLoadModule = %x\n", loadModule);
 	if(loadModule < 0) ERROR(loadModule);
 	int netInit = sceNetInit(&param);
-	sceClibPrintf("sceNetInit = %x\n", netInit);
+	PRINT_STR("sceNetInit = %x\n", netInit);
 	if(netInit < 0) ERROR(netInit);
 	int netCtlInit = sceNetCtlInit();
-	sceClibPrintf("sceNetCtlInit = %x\n", netCtlInit);
+	PRINT_STR("sceNetCtlInit = %x\n", netCtlInit);
 	if(netCtlInit < 0) ERROR(netCtlInit);
 	
 	init = 1;
@@ -51,9 +52,9 @@ void term_network() {
 uint8_t is_connected() {
 	if(!init) return 0;
 	int state = 0;
-	sceClibPrintf("sceNetCtlInetGetState before call\n", state);
+	PRINT_STR("sceNetCtlInetGetState before call\n", state);
 	sceNetCtlInetGetState(&state);
-	sceClibPrintf("state = %x\n", state);
+	PRINT_STR("state = %x\n", state);
 
 	if(state == SCE_NETCTL_STATE_CONNECTED)
 		return 1;
@@ -63,9 +64,9 @@ uint8_t is_connected() {
 
 uint8_t check_ip_address_valid(char* ip_address) {
 	uint64_t ip_addr_int = 0;
-	sceClibPrintf("sceNetPton call\n");
+	PRINT_STR("sceNetPton call\n");
 	int res = sceNetInetPton(SCE_NET_AF_INET, ip_address, &ip_addr_int);
-	sceClibPrintf("sceNetPton call res = %x\n", res);
+	PRINT_STR("sceNetPton call res = %x\n", res);
 	if(res < 0) return 0;
 	else return 1;
 }

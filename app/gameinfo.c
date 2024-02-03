@@ -5,6 +5,7 @@
 #include "gameinfo.h"
 #include "io.h"
 #include "sfo.h"
+#include "log.h"
 
 #define DEFAULT_TITLEID "NPXS99999"
 #define DEFAULT_TITLE "UNKNOWN"
@@ -18,7 +19,7 @@ int read_gameinfo(char* title_id, char* title) {
 	wait_for_partition("gro0:");
 	// get title id from gro0:/app folder
 	int res = read_titleid(title_id);
-	sceClibPrintf("read_title_id: = %x\n", res);
+	PRINT_STR("read_title_id: = %x\n", res);
 
 	if(res >= 0) {
 		char param_sfo_path[512];
@@ -27,7 +28,7 @@ int read_gameinfo(char* title_id, char* title) {
 		if(res == -9) // not found
 			res = read_sfo_key("TITLE", title, param_sfo_path);
 		
-		sceClibPrintf("read_title: = %x\n", res);
+		PRINT_STR("read_title: = %x\n", res);
 	}
 	
 	if(res < 0) {

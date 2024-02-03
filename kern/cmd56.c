@@ -3,6 +3,7 @@
 #include <taihen.h>
 #include <vitasdkkern.h>
 #include "cmd56.h"
+#include "log.h"
 
 // static variables
 static uint8_t LAST_CAPTURED_CMD20_INPUT[0x116];
@@ -16,15 +17,14 @@ static int proto_keyid_check_inject = -1;
 static int ksceSblSmCommCallFuncHook = -1;
 static tai_hook_ref_t ksceSblSmCommCallFuncHookRef;
 
+int (* gc_insert_interupt)(uint32_t param_1, int param_2, int param_3, char* param_4); 
 
 int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt32 *service_result, SceSblSmCommGcData *data, SceSize size) {
-	ksceDebugPrintf("cmd = %x\n", data->command);
-	
 	if(data->command == 0x20) {
-		ksceDebugPrintf("copy auth input, data->data %x\n", data->data);
+		PRINT_STR("copy auth input, data->data %x\n", data->data);
 		memcpy(LAST_CAPTURED_CMD20_INPUT, data->data, sizeof(LAST_CAPTURED_CMD20_INPUT));
 		
-		ksceDebugPrintf("keyid %x\n", data->key_id);
+		PRINT_STR("keyid %x\n", data->key_id);
 		LAST_CAPTURED_CMD20_KEYID = data->key_id;
 		HAS_CAPTURED_CMD20 = 1;
 	}
@@ -35,17 +35,19 @@ int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt
 void cmd56_patch() {
 	memset(LAST_CAPTURED_CMD20_INPUT, 0x00, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	
-	tai_module_info_t info;
-	info.size = sizeof(tai_module_info_t);
-	int res = taiGetModuleInfoForKernel(KERNEL_PID, "SceSblGcAuthMgr", &info);
-	if(res >= 0) {
+	tai_module_info_t gc_authmgr_info;
+	gc_authmgr_info.size = sizeof(tai_module_info_t);
+	int authmgr_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSblGcAuthMgr", &gc_authmgr_info);
+	PRINT_STR("get module SceSblGcAuthMgr 0x%04X\n", authmgr_get_info);
+	
+	if(authmgr_get_info >= 0) {
 		// prototype game carts use key ids != 1,
 		// 3.60 firmware checks if ((key_id & 0xffff7fff) == 1)
 		// it would be nice if we could dump prototype gamecarts tho ..
 	
 		uint16_t nop_instruction = 0xBF00;
-		proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, info.modid, 0, 0x9376, &nop_instruction, sizeof(uint16_t));
-		ksceDebugPrintf("proto_keyid_check_inject 0x%04X\n", proto_keyid_check_inject);
+		proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, gc_authmgr_info.modid, 0, 0x9376, &nop_instruction, sizeof(uint16_t));
+		PRINT_STR("proto_keyid_check_inject 0x%04X\n", proto_keyid_check_inject);
 		
 		// capture sm communications
 		ksceSblSmCommCallFuncHook = taiHookFunctionImportForKernel(KERNEL_PID,
@@ -55,11 +57,19 @@ void cmd56_patch() {
 			0xDB9FC204, // ksceSblSmCommCallFunc
 			ksceSblSmCommCallFunc_patch);
 		
-		ksceDebugPrintf("ksceSblSmCommCallFuncHook 0x%04X\n", ksceSblSmCommCallFuncHook);
-		ksceDebugPrintf("ksceSblSmCommCallFuncHookRef 0x%04X\n", ksceSblSmCommCallFuncHookRef);
+		PRINT_STR("ksceSblSmCommCallFuncHook 0x%04X\n", ksceSblSmCommCallFuncHook);
+		PRINT_STR("ksceSblSmCommCallFuncHookRef 0x%04X\n", ksceSblSmCommCallFuncHookRef);
 	}
 	
-	ksceDebugPrintf("get module info 0x%04X\n", res);
+	tai_module_info_t sdstor_info;
+	sdstor_info.size = sizeof(tai_module_info_t);
+	int sdstor_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
+	PRINT_STR("get module SceSdstor 0x%04X\n", authmgr_get_info);
+	
+	if(sdstor_get_info >= 0){
+		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x3BE0 | 1, (uintptr_t*)&gc_insert_interupt);
+		PRINT_STR("module_get_offset 0x%04X\n", res);
+	}
 	
 }
 
@@ -92,8 +102,40 @@ int HasCmd20Captured() {
 	return HAS_CAPTURED_CMD20;
 }
 
-int StartGcAuthentication() {
-	return ksceSblGcAuthMgrGcAuthCartAuthentication(1);
+int ResetGc() {
+	// spent ages trying to find a way to run gc authentication again when already inserted
+	// then i had a thought ???
+	// have you tried turning it off and on again ????
+	
+	
+	char param_4[0x10];
+	memset(param_4, 0x00, sizeof(param_4));
+	
+	PRINT_STR("Resetting GC ...\n");
+	
+	// trigger gc remove interupt
+	int res = gc_insert_interupt(0, 0x200, 0, param_4);
+	PRINT_STR("gc_insert_interupt(0, 0x200, 0, param_4) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	// power down gc slot
+	res = ksceSysconCtrlSdPower(0);
+	PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
+	if(res < 0) return res;
+
+	// power up gc slot
+	res = ksceSysconCtrlSdPower(1);
+	PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	// trigger gc insert interupt
+	res = gc_insert_interupt(1, 0x100000, 0, param_4);
+	PRINT_STR("gc_insert_interupt(1, 0x100000, 0, param_4) 0x%04X\n", res);
+	if(res < 0) return res;
+	
+	PRINT_STR("param_4[5] = 0x%04X\n", param_4[5]);
+	
+	return 0;
 }
 
 int ClearFinalKeys() {

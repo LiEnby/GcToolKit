@@ -16,6 +16,7 @@
 #include "net.h"
 #include "bgm.h"
 #include "f00dbridge.h"
+#include "log.h"
 
 void get_output_filename(char* output, char* format, int size_output) {
 	char title_id[64];
@@ -53,7 +54,7 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 		switch(selected) {
 			case CHANGE_IP:
 				open_ime("Enter IP", ip_address, 15);
-				sceClibPrintf("ip address: %s\n", ip_address);
+				PRINT_STR("ip address: %s\n", ip_address);
 				if(!check_ip_address_valid(ip_address))
 					strncpy(ip_address, DEFAULT_IP, sizeof(ip_address));
 				
@@ -77,7 +78,7 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 	
 void handle_menu_set_output(char* fmt, int what) {
 	
-	sceClibPrintf("handle_menu_set_output\n");
+	PRINT_STR("handle_menu_set_output\n");
 	// determine block device
 	char* block_device = NULL;
 	char* output_device = NULL;
@@ -97,19 +98,19 @@ void handle_menu_set_output(char* fmt, int what) {
 
 	}
 
-	sceClibPrintf("block_device: %s\n", block_device);
+	PRINT_STR("block_device: %s\n", block_device);
 
 	// get filename
 	char output_filename[MAX_PATH*3];
 	get_output_filename(output_filename, fmt, MAX_PATH);
 	
-	sceClibPrintf("output_filename: %s\n", output_filename);
+	PRINT_STR("output_filename: %s\n", output_filename);
 
 	// get total size
 	uint64_t total_device_size = sizeof(GcKeys);
 	if(block_device != NULL)
 		total_device_size = device_size(block_device);
-	sceClibPrintf("total_device_size %llx\n", total_device_size);
+	PRINT_STR("total_device_size %llx\n", total_device_size);
 	
 	int selected = -1;
 	while(1) {
@@ -145,7 +146,7 @@ void handle_menu_set_output(char* fmt, int what) {
 		
 		break;
 	};
-	sceClibPrintf("output_device %s\n", output_device);
+	PRINT_STR("output_device %s\n", output_device);
 
 	// get outfile
 	char output_folder[MAX_PATH*3];
@@ -159,7 +160,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	// get full output path, device:bak/file.vci 
 	snprintf(output_folder, sizeof(output_folder), "%sbak/%s", output_device, output_filename);
 	
-	sceClibPrintf("what = %x, output_folder = %s\n", what, output_folder);
+	PRINT_STR("what = %x, output_folder = %s\n", what, output_folder);
 
 	int res = -1;
 	if(selected != DUMP_LOCATION_NET) {
@@ -224,7 +225,7 @@ void handle_select_file(int what, char* folder) {
 	uint64_t total_device_size = 0;
 	if(block_device != NULL)
 		total_device_size = device_size(block_device);
-	sceClibPrintf("total_device_size %llx\n", total_device_size);
+	PRINT_STR("total_device_size %llx\n", total_device_size);
 	
 	// show file selection
 	char file[MAX_PATH];

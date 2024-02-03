@@ -2,13 +2,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <vitasdkkern.h>
+#include "log.h"
 
 // bypass blackfin mitigation
 static int sceKernelGetSystemTimeWideHook = -1;
 static tai_hook_ref_t sceKernelGetSystemTimeWideHookRef;
 
 uint64_t return_0() {
-	ksceDebugPrintf("ret 0\n");
+	PRINT_STR("ret 0\n");
 	return 0;
 }
 
@@ -23,8 +24,8 @@ void cobra_patch() {
 		return_0);
 	
 	
-	ksceDebugPrintf("sceKernelGetSystemTimeWideHook 0x%04X\n", sceKernelGetSystemTimeWideHook);
-	ksceDebugPrintf("sceKernelGetSystemTimeWideHookRef 0x%04X\n", sceKernelGetSystemTimeWideHookRef);
+	PRINT_STR("sceKernelGetSystemTimeWideHook 0x%04X\n", sceKernelGetSystemTimeWideHook);
+	PRINT_STR("sceKernelGetSystemTimeWideHookRef 0x%04X\n", sceKernelGetSystemTimeWideHookRef);
 	
 }
 void cobra_unpatch() {

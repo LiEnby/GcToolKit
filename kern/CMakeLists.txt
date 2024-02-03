@@ -42,6 +42,7 @@ target_link_libraries(${PROJECT_NAME}
 	SceSysmemForDriver_stub
 	SceDebugForDriver_stub
 	ScePowerForDriver_stub
+	SceSysconForDriver_stub
 	SceSblGcAuthMgrGcAuthForDriver_stub
 	SceSblGcAuthMgrDrmBBForDriver_stub
 )

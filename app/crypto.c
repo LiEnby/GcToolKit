@@ -7,10 +7,14 @@
 #include "sha256.h"
 #include "sha1.h"
 
+#include "io.h"
+#include "device.h"
+
 #include "f00dbridge.h"
 #include "crypto.h"
 #include "net.h"
 #include "err.h"
+#include "log.h"
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	GcKeys keys;
@@ -19,11 +23,11 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	if(got_keys < 0) return got_keys;
 	
 	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcKeys));
-	sceClibPrintf("fd = %x\n", fd);
+	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
 	int wr = file_send_data(fd, &keys, sizeof(GcKeys));
-	sceClibPrintf("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
 	end_file_send(fd);
 
 	if(wr == 0) return -1;
@@ -40,11 +44,11 @@ int key_dump(char* output_file) {
 	if(got_keys < 0) return got_keys;
 	
 	SceUID fd = sceIoOpen(output_file, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-	sceClibPrintf("fd = %x\n", fd);
+	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
 	int wr = sceIoWrite(fd, &keys, sizeof(GcKeys));
-	sceClibPrintf("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
 	sceIoClose(fd);
 
 	if(wr == 0) return -1;
@@ -82,15 +86,18 @@ void decrypt_packet20_rifbuf(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t*
 }
 
 void wait_for_gc_auth() {
-	ResetCmd20Input();
-	while(!HasCmd20Captured()) { sceKernelDelayThread(5000); };
-}
+	int res = ResetCmd20Input();
+	PRINT_STR("ResetCmd20Input = %x\n", res);
 
-void print_buffer(char* buffer, int size){
-	for(int i = 0; i < size; i++) {
-		sceClibPrintf("%02X ", (unsigned char)(buffer[i]));		
+	// check if there is already a GC inserted, if there is 
+	// reset the gc device to capture authentication step
+	// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
+	if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
+		res = ResetGc();
+		PRINT_STR("ResetGc = %x\n", res);			
 	}
-	sceClibPrintf("\n");
+
+	while(!HasCmd20Captured()) { sceKernelDelayThread(1000); };
 }
 
 uint8_t verify_klic_keys(GcKeys* keys) {
@@ -109,17 +116,13 @@ uint8_t verify_klic_keys(GcKeys* keys) {
 	if(memcmp(got_final_keys, expected_final_keys, SHA256_BLOCK_SIZE) == 0) {
 		return 1;
 	}
-error:
-	// print info
-	sceClibPrintf("GcKeys ");
-	print_buffer(keys, sizeof(GcKeys));
+error:	
+	PRINT_STR("verify_klic_keys failed !\n");
+	PRINT_STR("got_final_keys ");
+	PRINT_BUFFER(got_final_keys);
 	
-	sceClibPrintf("verify_klic_keys failed !\n");
-	sceClibPrintf("got_final_keys ");
-	print_buffer(got_final_keys, sizeof(got_final_keys));
-	
-	sceClibPrintf("expected_final_keys ");
-	print_buffer(expected_final_keys, sizeof(expected_final_keys));
+	PRINT_STR("expected_final_keys ");
+	PRINT_BUFFER(expected_final_keys);
 	
 	return 0;
 }
@@ -138,40 +141,40 @@ uint8_t verify_rif_keys(GcKeys* keys) {
 	// get title id from license folder
 	char folder[MAX_PATH];
 	snprintf(folder, MAX_PATH, "gro0:/license/app");
-	sceClibPrintf("folder = %s\n", folder);
+	PRINT_STR("folder = %s\n", folder);
 	
 	char TITLE_ID[12];
 	int res = read_first_filename(folder, TITLE_ID, sizeof(TITLE_ID));
-	sceClibPrintf("read_first_filename license folder res = 0x%x\n",res);
+	PRINT_STR("read_first_filename license folder res = 0x%x\n",res);
 	if(res < 0) ERROR(-1);
 
-	sceClibPrintf("TITLE_ID = %s\n", TITLE_ID);
+	PRINT_STR("TITLE_ID = %s\n", TITLE_ID);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", TITLE_ID);
-	sceClibPrintf("folder = %s\n", folder);
+	PRINT_STR("folder = %s\n", folder);
 	
 	// get rif name from license/titleid folder
 	char RIF_NAME[0x50];
 	res = read_first_filename(folder, RIF_NAME, sizeof(RIF_NAME));
-	sceClibPrintf("read_first_filename license titleid folder res = 0x%x\n",res);
+	PRINT_STR("read_first_filename license titleid folder res = 0x%x\n",res);
 	if(res < 0) ERROR(-2);
 	
-	sceClibPrintf("RIF_NAME = %s\n", RIF_NAME);
+	PRINT_STR("RIF_NAME = %s\n", RIF_NAME);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s/%s", TITLE_ID, RIF_NAME);
 	
-	sceClibPrintf("folder = %s\n", folder);
+	PRINT_STR("folder = %s\n", folder);
 	
 	// read the hash from the rif file ..
 	
 	SceUID fd = sceIoOpen(folder, SCE_O_RDONLY, 0777);
-	sceClibPrintf("rif fd = %x\n", fd);
+	PRINT_STR("rif fd = %x\n", fd);
 	if(fd < 0) ERROR(-3);
 	
 	uint64_t loc = sceIoLseek(fd, 0xE0, SCE_SEEK_SET);
-	sceClibPrintf("sceIoLseek loc = %llx\n", loc);
+	PRINT_STR("sceIoLseek loc = %llx\n", loc);
 	if(loc != 0xE0) ERROR(-4);
 	
 	res = sceIoRead(fd, got_final_rif_hash, SHA1_BLOCK_SIZE);
-	sceClibPrintf("sceIoRead res = %x\n", res);
+	PRINT_STR("sceIoRead res = %x\n", res);
 	if(res != SHA1_BLOCK_SIZE) ERROR(-5);
 	
 	sceIoClose(fd);
@@ -182,7 +185,7 @@ uint8_t verify_rif_keys(GcKeys* keys) {
 		return 1;
 	}
 
-	sceClibPrintf("verify_rif_keys failed!\n");
+	PRINT_STR("verify_rif_keys failed!\n");
 	
 	return 0;
 error:	
@@ -198,15 +201,15 @@ int extract_gc_keys(GcKeys* keys) {
 		CommsData cmdData;
 		GetLastCmd20Input(&cmdData);
 		int keyId = GetLastCmd20KeyId();
-		sceClibPrintf("keyId = %x\n", keyId);
+		PRINT_STR("keyId = %x\n", keyId);
 		
 		// decrypt secondaryKey0 (requires f00d)
 		uint8_t secondaryKey0[0x10];
 		memset(secondaryKey0, 0xFF, sizeof(secondaryKey0));
 		DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
 	
-		sceClibPrintf("secondaryKey0 ");
-		print_buffer(secondaryKey0, sizeof(secondaryKey0));
+		PRINT_STR("secondaryKey0 ");
+		PRINT_BUFFER(secondaryKey0);
 			
 		// decrypt klic part from packet18
 		decrypt_packet18_klic(secondaryKey0, cmdData.packet18, keys->klic);

@@ -8,6 +8,7 @@
 #include "net.h"
 #include "f00dbridge.h"
 #include "kernel.h"
+#include "log.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -28,10 +29,10 @@ static uint8_t options[0x1000];
 					opt_y += increment_y; \
 					total++; \
 					options[option] = 1; \
-					sceClibPrintf("options[%i] = 1\n", option); \
+					PRINT_STR("options[%i] = 1\n", option); \
 				   } else { \
 					options[option] = 0; \
-					sceClibPrintf("options[%i] = 0\n", option); \
+					PRINT_STR("options[%i] = 0\n", option); \
 				   } \
 				   option++ 
 
@@ -83,8 +84,8 @@ static uint8_t options[0x1000];
 						if(window != first_option) \
 							window--; \
 					  } \
-					  sceClibPrintf("selected: %x\n", selected); \
-					  sceClibPrintf("window: %x\n", window); \
+					  PRINT_STR("selected: %x\n", selected); \
+					  PRINT_STR("window: %x\n", window); \
 				  }
 
 void init_menus() {
@@ -129,18 +130,12 @@ void draw_insert_gc_menu() {
 	
 	draw_title("Waiting for CMD56 authentication ...");
 	draw_texture_center(140, insertgc_tex);
-	draw_text_center(360, "Insert a VITA game cart!");
-	draw_text_center(380, "(If there already one eject it and put it back in)");
-	
+	draw_text_center(360, "Insert a VITA game cart!");	
 	end_draw();
 }
 
 void do_gc_insert_prompt() {
 	draw_insert_gc_menu();
-	
-//	int res = StartGcAuthentication(); // re-do authentication.
-//	sceClibPrintf("StartGcAuthentication = %x\n", res);
-	
 	wait_for_gc_auth();	
 }
 
@@ -363,11 +358,11 @@ int do_select_file(char* folder, char* output, char* extension, uint64_t max_siz
 	
 	int res = get_files_in_folder(folder, files, &total_files, &filter, sizeof(options));
 	
-	sceClibPrintf("get_files_in_folder = %x\n", res);
+	PRINT_STR("get_files_in_folder = %x\n", res);
 	if(res < 0) return res;
 	if(total_files <= 0) return -2;
 	
-	sceClibPrintf("total_files: %x\n", total_files);
+	PRINT_STR("total_files: %x\n", total_files);
 	
 	PROCESS_MENU(draw_select_file, folder, files, total_files);
 	strncpy(output, files + (selected * MAX_PATH), MAX_PATH);	
@@ -468,7 +463,7 @@ int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_
 
 int do_select_input_location() {
 	
-	sceClibPrintf("mount_devices\n");
+	PRINT_STR("mount_devices\n");
 	mount_devices();
 	
 	uint8_t ux_exist = file_exist("ux0:");
@@ -494,11 +489,11 @@ int do_error(int error) {
 
 int do_select_output_location(char* output, uint64_t device_size) {
 	
-	sceClibPrintf("mount_devices\n");
+	PRINT_STR("mount_devices\n");
 	mount_devices();
 	
 	uint8_t save_network = is_connected();
-	sceClibPrintf("save_network = %x\n", save_network);
+	PRINT_STR("save_network = %x\n", save_network);
 	
 	uint64_t xmc_size = get_free_space("xmc0:");
 	uint64_t uma_size = get_free_space("uma0:");
@@ -510,10 +505,10 @@ int do_select_output_location(char* output, uint64_t device_size) {
 	uint8_t host_exist = file_exist("host0:");
 	
 	
-	sceClibPrintf("device_size %llx\n", device_size);
-	sceClibPrintf("xmc_size %llx\n", xmc_size);
-	sceClibPrintf("uma_size %llx\n", uma_size);
-	sceClibPrintf("ux_size %llx\n", ux_size);
+	PRINT_STR("device_size %llx\n", device_size);
+	PRINT_STR("xmc_size %llx\n", xmc_size);
+	PRINT_STR("uma_size %llx\n", uma_size);
+	PRINT_STR("ux_size %llx\n", ux_size);
 	
 	PROCESS_MENU(draw_select_output_location, output, 
 				(ux_exist  && ux_size >= device_size), 

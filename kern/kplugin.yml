@@ -10,7 +10,7 @@ f00dbridge:
     libGcAuthDumper:
       syscall: true
       functions:
-        - StartGcAuthentication
+        - ResetGc
         - ClearFinalKeys
         - GetFinalKeys
         - DecryptSecondaryKey0
