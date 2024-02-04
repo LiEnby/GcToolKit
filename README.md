@@ -10,7 +10,7 @@ or an offical memory card, or over the local network.
 
 
 -- Credit
-- Li, <sup>The Crystal System</sup> - Programming the thing, VCI Format, Reverse engineering gamecart CMD56
+-  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
 - Princess of Sleeping - ExFAT Format code, CMD56 helps
@@ -18,13 +18,13 @@ or an offical memory card, or over the local network.
 - dots_tb - USB OTG
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
 
--- OTG Compatiblity --
+-- OTG Compatiblity
 
 This program allows backup vita GCs with a USB device connected via an OTG cable
 however this only works with OTG cables with an external power source; or "Y-Cable"
 for example this one for the Amazon Fire Stick https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT will work.
 
--- Difference between .vci and .psv formats --
+-- Difference between .vci and .psv formats
 
 The main difference is how the keys stored. 
 in psvgamesd, the result of gc_auth_mgr_sm function 0x20 is stored,
