@@ -17,28 +17,28 @@
 #include "log.h"
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
-	GcKeys keys;
+	GcKEYS keys;
 	
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
 	
-	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcKeys));
+	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcKEYS));
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
-	int wr = file_send_data(fd, &keys, sizeof(GcKeys));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
+	int wr = file_send_data(fd, &keys, sizeof(GcKEYS));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKEYS));
 	end_file_send(fd);
 
 	if(wr == 0) return -1;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcKeys)) return (wr * -1);
+	if(wr != sizeof(GcKEYS)) return (wr * -1);
 
 	return 0;
 }
 
 int key_dump(char* output_file) {
-	GcKeys keys;
+	GcKEYS keys;
 	
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
@@ -47,13 +47,13 @@ int key_dump(char* output_file) {
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
-	int wr = sceIoWrite(fd, &keys, sizeof(GcKeys));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKeys));
+	int wr = sceIoWrite(fd, &keys, sizeof(GcKEYS));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKEYS));
 	sceIoClose(fd);
 
 	if(wr == 0) return -1;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcKeys)) return (wr * -1);
+	if(wr != sizeof(GcKEYS)) return (wr * -1);
 
 	return 0;
 }
@@ -100,7 +100,7 @@ void wait_for_gc_auth() {
 	while(!HasCmd20Captured()) { sceKernelDelayThread(1000); };
 }
 
-uint8_t verify_klic_keys(GcKeys* keys) {
+uint8_t verify_klic_keys(GcKEYS* keys) {
 	char got_final_keys[SHA256_BLOCK_SIZE];
 	char expected_final_keys[SHA256_BLOCK_SIZE];
 	int res = GetFinalKeys(got_final_keys);
@@ -110,7 +110,7 @@ uint8_t verify_klic_keys(GcKeys* keys) {
 	SHA256_CTX ctx;
 	
 	sha256_init(&ctx);
-	sha256_update(&ctx, keys, sizeof(GcKeys));
+	sha256_update(&ctx, keys, sizeof(GcKEYS));
 	sha256_final(&ctx, expected_final_keys);
 	
 	if(memcmp(got_final_keys, expected_final_keys, SHA256_BLOCK_SIZE) == 0) {
@@ -127,7 +127,7 @@ error:
 	return 0;
 }
 
-uint8_t verify_rif_keys(GcKeys* keys) {
+uint8_t verify_rif_keys(GcKEYS* keys) {
 	int ret = 0;
 	char expected_final_rif_hash[SHA1_BLOCK_SIZE];
 	char got_final_rif_hash[SHA1_BLOCK_SIZE];
@@ -195,7 +195,7 @@ error:
 	
 }
 
-int extract_gc_keys(GcKeys* keys) {
+int extract_gc_keys(GcKEYS* keys) {
 	if(HasCmd20Captured()) {
 		// get captured cmd56 authentication data
 		CommsData cmdData;

@@ -8,18 +8,66 @@
 #include "log.h"
 #include "f00dbridge.h"
 #include "device.h"
-#include "crypto.h"
+#include "mbr.h"
 #include "vci.h"
 #include "err.h"
 #include "net.h"
+
+#define DO_CHECKED(var, func, ...) \
+	int var = func(__VA_ARGS__); \
+	PRINT_STR(#var " = %x\n", var); \
+	if(var < 0) ERROR(var)
+
+#define DEVICE_ACCESS_LOOP(rd_func, wr_func) \
+	do { \
+		int rd = rd_func(rd_fd, (void*)DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); \
+		if(rd == 0) ERROR(-2); \
+		if(rd < 0) ERROR(rd); \
+		\
+		int wr = wr_func(wr_fd, (void*)DEVICE_DUMP_BUFFER, rd); \
+		if(wr == 0) ERROR(-3); \
+		if(wr < 0) ERROR(wr); \
+		\
+		total += wr; \
+		if(progress_callback != NULL) progress_callback(block_device, path, total, device_size); \
+	} while(total < device_size)
+
+#define CREATE_VCI_HDR(wr_func) \
+	if(keys != NULL) { \
+		VciFile vci; \
+		memset(&vci, 0x00, sizeof(VciFile)); \
+		\
+		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic)); \
+		vci.version = 1; \
+		vci.devicesize = device_size; \
+		memcpy(&vci.keys, keys, sizeof(GcKEYS)); \
+		\
+		int wr = wr_func(wr_fd, &vci, sizeof(VciFile)); \
+		PRINT_STR("wr = %x\n", wr); \
+		\
+		if(wr == 0) ERROR(-1); \
+		if(wr != sizeof(VciFile)) ERROR(wr * -1); \
+		if(wr < 0) ERROR(wr); \
+	}
+
+#define CREATE_DEV_SZ(dev_fd) \
+	uint64_t device_size = 0; \
+	GetDeviceSize(dev_fd, &device_size); \
+	PRINT_STR("device_size = %llx\n", device_size); \
+	if(device_size == 0) ERROR(-1); \
+	if(progress_callback != NULL) progress_callback(block_device, block_device, total, device_size)\
+	
+#define SAFE_CHK() if(memcmp(block_device, "sdstor0:gcd", 11) != 0) ERROR(-128)
 
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
 uint8_t device_exist(char* block_device) {
 	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
+	
 	if(dfd < 0)
 		return 0;
+	
 	CloseDevice(dfd);
 	return 1;
 }
@@ -31,240 +79,148 @@ uint64_t device_size(char* block_device) {
 	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
 	if(dfd < 0)
 		return 0;
+	
 	GetDeviceSize(dfd, &device_size);
 	CloseDevice(dfd);
 	
 	return device_size;
-	
 }
-int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* output_path, GcKeys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+
+// device dump/restore
+
+int read_null(SceUID fd, char* data, int size) {
+	memset(data, 0x00, size);
+	return size;
+}
+
+int read_data_from_image(SceUID fd, char* data, int size) {
+	int rd = sceIoRead(fd, data, size);
+	if(rd < 0) return rd;
+	
+	// if there is remaining space, memset it to 0
+	if(rd < size) {
+		memset(data+rd, 0x00, size-rd);
+	}
+	
+	return size;
+}
+
+int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* path, GcKEYS* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;	
-	uint64_t total_read = 0;
+	uint64_t total = 0;
 	
 	PRINT_STR("Begining NETWORK dump of %s to %s:%u\n", block_device, ip_address, port);
 	
-	// open gc
-	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
-	PRINT_STR("device_fd = %x\n", device_fd);
-	if(device_fd < 0) ERROR(device_fd);
-	
-	// get gc size
-	uint64_t device_size = 0;
-	GetDeviceSize(device_fd, &device_size);
-	PRINT_STR("device_size = %llx\n", device_size);
-	if(device_size == 0) ERROR(-1);
-	
-	if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
+	// open device
+	DO_CHECKED(rd_fd, OpenDevice, block_device, SCE_O_RDONLY);
 
+	// get device size
+	CREATE_DEV_SZ(rd_fd);
+	
 	// open socket
-	SceUID gc_sock = begin_file_send(ip_address, port, output_path, (keys != NULL) ? device_size + sizeof(VciFile) : device_size);
-	PRINT_STR("gc_sock = %x\n", gc_sock);
-	if(gc_sock < 0) ERROR(gc_sock);
-
+	DO_CHECKED(wr_fd, begin_file_send, ip_address, port, path, (keys != NULL) ? device_size + sizeof(VciFile) : device_size);
 	
-	if(keys != NULL) {
-		// generate VCI header
-		VciFile vci;
-		memset(&vci, 0x00, sizeof(VciFile));
-		
-		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic));
-		vci.version = 1;
-		vci.devicesize = device_size;
-		memcpy(&vci.keys, keys, sizeof(GcKeys));
-		
-		// write VCI header to file
-		int wr = file_send_data(gc_sock, &vci, sizeof(VciFile));
-		PRINT_STR("wr = %x\n", wr);
-		
-		if(wr == 0) ERROR(-1);
-		if(wr != sizeof(VciFile)) ERROR(wr * -1);
-		if(wr < 0) ERROR(wr);
-	}
+	// write vci header
+	CREATE_VCI_HDR(file_send_data);
 
 	// enter read/write loop
-	do {
-		int rd = ReadDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // read raw from device
-		if(rd == 0) ERROR(-2);
-		if(rd < 0) ERROR(rd);
-
-		int wr = file_send_data(gc_sock, DEVICE_DUMP_BUFFER, rd); // send raw data
-		if(wr == 0) ERROR(-3);
-		if(wr < 0) ERROR(wr);
-		
-		total_read += wr;
-		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
-	} while(total_read < device_size);
+	DEVICE_ACCESS_LOOP(ReadDevice, file_send_data);
 	
 error:
-	if(gc_sock >= 0)
-		end_file_send(gc_sock);
-	if(device_fd >= 0)
-		CloseDevice(device_fd);
+	if(wr_fd >= 0)
+		end_file_send(wr_fd);
+	if(rd_fd >= 0)
+		CloseDevice(rd_fd);
 	
 	return ret;
 }
 
-int dump_device(char* block_device, char* output_path, GcKeys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
-	int ret = 0;
-	uint64_t total_read = 0;
 
-	PRINT_STR("Begining dump of %s to %s\n", block_device, output_path);
+int dump_device(char* block_device, char* path, GcKEYS* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+	int ret = 0;
+	uint64_t total = 0;
+
+	PRINT_STR("Begining dump of %s to %s\n", block_device, path);
+	
+	// open device
+	DO_CHECKED(rd_fd, OpenDevice, block_device, SCE_O_RDONLY);
 	
 	// open image file
-	SceUID img_fd = sceIoOpen(output_path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
-	PRINT_STR("img_fd = %x\n", img_fd);
-	if(img_fd < 0) ERROR(img_fd);
-
-	// open device
-	int device_fd = OpenDevice(block_device, SCE_O_RDONLY);
-	PRINT_STR("device_fd = %x\n", device_fd);
-	if(device_fd < 0) ERROR(device_fd);
+	DO_CHECKED(wr_fd, sceIoOpen, path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
 	
 	// get device size
-	uint64_t device_size = 0;
-	GetDeviceSize(device_fd, &device_size);
-	PRINT_STR("device_size = %llx\n", device_size);
-	if(device_size == 0) ERROR(-1);
-	
-	if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
+	CREATE_DEV_SZ(rd_fd);
 
-	if(keys != NULL) {
-		// generate VCI header
-		VciFile vci;
-		memset(&vci, 0x00, sizeof(VciFile));
-		
-		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic));
-		vci.version = 1;
-		vci.devicesize = device_size;
-		memcpy(&vci.keys, keys, sizeof(GcKeys));
-		
-		// write VCI header to file
-		int wr = sceIoWrite(img_fd, &vci, sizeof(VciFile));
-		PRINT_STR("wr = %x\n", wr);
-		
-		if(wr == 0) ERROR(-1);
-		if(wr != sizeof(VciFile)) ERROR(wr * -1);
-		if(wr < 0) ERROR(wr);		
-	}
+	// write vci header
+	CREATE_VCI_HDR(sceIoWrite);
 
 	// enter read/write loop
-	do {
-		int rd = ReadDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // read raw from device
-		if(rd == 0) ERROR(-2);
-		if(rd < 0) ERROR(rd);
-
-		int wr = sceIoWrite(img_fd, DEVICE_DUMP_BUFFER, rd); // write raw data
-		if(wr == 0) ERROR(-3);
-		if(wr < 0) ERROR(wr);
-		
-		total_read += wr;
-		if(progress_callback != NULL) progress_callback(block_device, output_path, total_read, device_size);
-	} while(total_read < device_size);
+	DEVICE_ACCESS_LOOP(ReadDevice, sceIoWrite);
 	
 error:
-	if(img_fd >= 0)
-		sceIoClose(img_fd);
-	if(device_fd >= 0)
-		CloseDevice(device_fd);
+	if(wr_fd >= 0)
+		sceIoClose(wr_fd);
+	if(rd_fd >= 0)
+		CloseDevice(rd_fd);
 	
 	return ret;
 }
 
-int restore_device(char* block_device, char* input_path, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int restore_device(char* block_device, char* path, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
-	uint64_t total_write = 0;
+	uint64_t total = 0;
 	
-	// sanity safety check
-	if(memcmp(block_device, "sdstor0:gcd", strlen("sdstor0:gcd")) != 0)
-		return -1; 
-	
-	PRINT_STR("Begining restore of %s to %s\n", input_path, block_device);
+	SAFE_CHK();
+	PRINT_STR("Begining restore of %s to %s\n", path, block_device);
 	
 	// get image file size
-	uint64_t img_file_sz = get_file_size(input_path);
+	uint64_t img_file_sz = get_file_size(path);
 	PRINT_STR("img_file_sz = %llx\n", img_file_sz);
 	
 	// open image file
-	SceUID img_fd = sceIoOpen(input_path, SCE_O_RDONLY, 0777);
-	PRINT_STR("img_fd = %x\n", img_fd);
-	if(img_fd < 0) ERROR(img_fd);
+	DO_CHECKED(rd_fd, sceIoOpen, path, SCE_O_RDONLY, 0777);
 
 	// open device
-	int device_fd = OpenDevice(block_device, SCE_O_WRONLY);
-	PRINT_STR("device_fd = %x\n", device_fd);
-	if(device_fd < 0) ERROR(device_fd);
+	DO_CHECKED(wr_fd, OpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
-	uint64_t device_size = 0;
-	GetDeviceSize(device_fd, &device_size);
-	PRINT_STR("device_size = %llx\n", device_size);
-	if(device_size == 0) ERROR(-1);
+	CREATE_DEV_SZ(wr_fd);
 	if(img_file_sz > device_size) ERROR(-2);
 	
-	if(progress_callback != NULL) progress_callback(block_device, input_path, total_write, device_size);
-
 	// enter read/write loop
-	do {
-		memset(DEVICE_DUMP_BUFFER, 0x00, sizeof(DEVICE_DUMP_BUFFER));
-		int rd = sceIoRead(img_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Read img data
-		if(rd < 0) ERROR(rd);
-
-		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // Write raw data to device
-		if(wr == 0) ERROR(-3);
-		if(wr < 0) ERROR(wr);
-
-		
-		total_write += wr;
-		if(progress_callback != NULL) progress_callback(block_device, input_path, total_write, device_size);
-	} while(total_write < device_size);
+	DEVICE_ACCESS_LOOP(read_data_from_image, WriteDevice);
 	
 error:
-	if(img_fd >= 0)
-		sceIoClose(img_fd);
-	if(device_fd >= 0)
-		CloseDevice(device_fd);
+	if(rd_fd >= 0)
+		sceIoClose(rd_fd);
+	if(wr_fd >= 0)
+		CloseDevice(wr_fd);
 	
 	return ret;
 }
 
 int wipe_device(char* block_device, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
-	uint64_t total_write = 0;
-
-	// sanity safety check
-	if(memcmp(block_device, "sdstor0:gcd", strlen("sdstor0:gcd")) != 0)
-		return -1; 
-		
+	uint64_t total = 0;
+	
+	int rd_fd = 0;
+	char* path = NULL;
+	
+	SAFE_CHK();
 	PRINT_STR("Begining wipe of %s\n", block_device);
 	
 	// open device
-	int device_fd = OpenDevice(block_device, SCE_O_WRONLY); // SCARY
-	PRINT_STR("device_fd = %x\n", device_fd);
-	if(device_fd < 0) ERROR(device_fd);
+	DO_CHECKED(wr_fd, OpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
-	uint64_t device_size = 0;
-	GetDeviceSize(device_fd, &device_size);
-	PRINT_STR("device_size = %llx\n", device_size);
-	if(device_size == 0) ERROR(-1);
+	CREATE_DEV_SZ(wr_fd);
 	
-	if(progress_callback != NULL) progress_callback(block_device, block_device, total_write, device_size);
-	memset(DEVICE_DUMP_BUFFER, 0x00, sizeof(DEVICE_DUMP_BUFFER));
-
-	// enter write loop
-	do {
-		int wr = WriteDevice(device_fd, DEVICE_DUMP_BUFFER, sizeof(DEVICE_DUMP_BUFFER)); // write raw to device
-		if(wr == 0) ERROR(-2);
-		if(wr < 0) ERROR(wr);
-		
-		total_write += wr;
-		
-		if(progress_callback != NULL) progress_callback(block_device, block_device, total_write, device_size);
-	} while(total_write < device_size);
+	// enter read/write loop
+	DEVICE_ACCESS_LOOP(read_null, WriteDevice);
 	
 error:
-	if(device_fd >= 0)
-		CloseDevice(device_fd);
+	if(wr_fd >= 0)
+		CloseDevice(wr_fd);
 	
 	return ret;
 }

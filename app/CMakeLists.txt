@@ -8,11 +8,11 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   endif()
 endif()
 
-project(GCDUMP)
+project(GCToolKit)
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
-set(VITA_APP_NAME "GC Toolkit")
-set(VITA_TITLEID  "GCDUMPER0")
+set(VITA_APP_NAME "GC ToolKit")
+set(VITA_TITLEID  "GCTK10000")
 
 set(VITA_VERSION  "01.00")
 

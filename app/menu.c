@@ -24,7 +24,7 @@ static uint8_t options[0x1000];
 				  int increment_y = 20; \
 				  int total = 0; \
 				  memset(options, 0x00, sizeof(options))
-#define ADDOPT(cond,x)if(cond) { \
+#define ADDOPT(cond,x) if(cond) { \
 					draw_option(opt_y, x, option == *selected); \
 					opt_y += increment_y; \
 					total++; \
@@ -88,6 +88,22 @@ static uint8_t options[0x1000];
 					  PRINT_STR("window: %x\n", window); \
 				  }
 
+#define RESTORE_MENU(title, what, dev, to) start_draw(); \
+					 draw_background(); \
+					 \
+					 char output_txt[128]; \
+					 snprintf(output_txt, sizeof(output_txt), title " %.30s ...", dev); \
+					 draw_title(output_txt); \
+					 \
+					 snprintf(output_txt, sizeof(output_txt), what " \"%.30s\" ...", to); \
+					 draw_text_center(200, output_txt); \
+					 \
+					 draw_progress_bar(210, progress, total); \
+					 snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0)); \
+					 draw_text_center(260, output_txt); \
+					 \
+					 end_draw()
+
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
 
@@ -95,6 +111,21 @@ void init_menus() {
 
 void term_menus() {
 	free_texture(insertgc_tex);	
+}
+
+
+
+
+void draw_wipe_progress(char* device, char* unused, uint64_t progress, uint64_t total) {
+	RESTORE_MENU("Formatting", "Writing", device, device);
+}
+
+void draw_restore_progress(char* device, char* input_filename, uint64_t progress, uint64_t total) {
+	RESTORE_MENU("Restoring", "Reading", device, input_filename);
+}
+
+void draw_dump_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
+	RESTORE_MENU("Backing up", "Writing", device, output_filename);
 }
 
 
@@ -242,63 +273,6 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	RETURNOPT();
 }
 
-void draw_wipe_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
-	
-	start_draw();
-	draw_background();
-	
-	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "Formatting %s ...", device);
-	draw_title(output_txt);
-
-	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", device);
-	draw_text_center(200, output_txt);
-	
-	draw_progress_bar(210, progress, total);
-	snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0));
-	draw_text_center(260, output_txt);
-	
-	end_draw();
-}
-
-void draw_restore_progress(char* device, char* input_filename, uint64_t progress, uint64_t total) {
-	
-	start_draw();
-	draw_background();
-	
-	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "Restoring %.30s ...", device);
-	draw_title(output_txt);
-
-	snprintf(output_txt, sizeof(output_txt), "Reading \"%.30s\" ...", input_filename);
-	draw_text_center(200, output_txt);
-	
-	draw_progress_bar(210, progress, total);
-	snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0));
-	draw_text_center(260, output_txt);
-	
-	end_draw();
-}
-
-void draw_dump_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
-	
-	start_draw();
-	draw_background();
-	
-	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "Backing up %s ...", device);
-	draw_title(output_txt);
-
-	snprintf(output_txt, sizeof(output_txt), "Writing \"%.30s\" ...", output_filename);
-	draw_text_center(200, output_txt);
-	
-	draw_progress_bar(210, progress, total);
-	snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0));
-	draw_text_center(260, output_txt);
-	
-	end_draw();
-}
-
 void draw_ime() {
 	start_draw();
 	draw_background();
@@ -428,7 +402,7 @@ int do_device_restore(char* block_device, char* input_file) {
 
 int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
 	
-	GcKeys keys;
+	GcKEYS keys;
 	if(vci){
 		int res = extract_gc_keys(&keys);
 		if(res < 0) return res;
