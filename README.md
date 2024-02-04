@@ -1,13 +1,16 @@
-# GcDumper
+# GcToolKit
 
-Create 1:1 backups of PSV Game Carts, with authentication data.
+Tool to create 1:1 backups of PSV Game Cartridges
+including CMD56 authenticationd data.
+
+This can also be used to format, backup and restore the writable grw0 and mediaid sections of gamecarts.
 
 This writes *.vci* files, (vita cartridge image) which is essentially
 cmd56 authentication data + raw image of gc
 
-Allows you to backup a vita game cart to a USB Device via an OTG cable on Vita2K, USB Port on VitaTV, 
-or an offical memory card, or over the local network.
-
+Can run a backup over the network, to a offical memory card,
+a USB device connected to a Vita TV or OTG on Vita 2k, or Accessory Port on Vita 1K
+or host0 on Development Kits.
 
 -- Credit
 -  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
