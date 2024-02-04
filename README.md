@@ -9,6 +9,15 @@ Allows you to backup a vita game cart to a USB Device via an OTG cable on Vita2K
 or an offical memory card, or over the local network.
 
 
+-- Credit
+- Li, <sup>The Crystal System</sup> - Programming the thing, VCI Format, Reverse engineering gamecart CMD56
+- olebeck - CMD56 helps
+- Robots System - Selecting music, choosing port numbers, ~~emotional support~~
+- Princess of Sleeping - ExFAT Format code, CMD56 helps
+- SKGLeba - psp2spl for F00D Code execution
+- dots_tb - USB OTG
+- EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
+
 -- OTG Compatiblity --
 
 This program allows backup vita GCs with a USB device connected via an OTG cable
