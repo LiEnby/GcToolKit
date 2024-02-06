@@ -64,6 +64,9 @@ int load_umass() {
 		if(ksceSblAimgrIsDolceHook > 0) taiHookReleaseForKernel(ksceSblAimgrIsDolceHook, ksceSblAimgrIsDolceHookRef);
 		if(umass_modid < 0) return umass_modid;
 	}
+	else{
+		PRINT_STR("umass.skprx already running\n");
+	}
 	
 	return 0;
 }
