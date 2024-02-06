@@ -1,67 +1,82 @@
-#include "sfo.h"
 #include <vitasdk.h>
 #include <string.h>
 #include <stdio.h>
-
-static uint8_t SFO_BUFFER[0x10000];
-
+#include <stdlib.h>
+#include "sfo.h"
+#include "io.h"
+#include "err.h"
 int read_sfo_key(char* key, char* out, char* sfo) {
-	memset(SFO_BUFFER, 0x00, sizeof(SFO_BUFFER));
+	int ret = 0;
+	
+	uint64_t sfo_size = get_file_size(sfo);
+	if(sfo_size <= 0) ERROR(sfo_size);
+	
+	char* sfo_buffer = malloc(sfo_size);
+	if(sfo_buffer == NULL) ERROR(-1);
+
+	memset(sfo_buffer, 0x00, sfo_size);
+	
 	// open sfo file
 	int sfo_fd = sceIoOpen(sfo, SCE_O_RDONLY, 0777);	
-	if(sfo_fd < 0) return sfo_fd;
-
+	if(sfo_fd < 0) ERROR(sfo_fd);
 	// read sfo
-	int sfo_size = sceIoRead(sfo_fd, SFO_BUFFER, sizeof(SFO_BUFFER));
+	
+	int rd = sceIoRead(sfo_fd, sfo_buffer, sfo_size);
+	if(rd != sfo_size) ERROR(-2);
+	
 	// close sfo
-	sceIoClose(sfo_fd);
-
-	if(sfo_size < 0) return sfo_size;
-	if(sfo_size >= sizeof(SFO_BUFFER)) return -1;
-	if(sfo_size <= sizeof(sfo_header)) return -2;
+	if(sceIoClose(sfo_fd) >= 0)
+		sfo_fd = 0;
+	
+	if(sfo_size <= sizeof(sfo_header)) ERROR(-3);
 	
 	
 	// get sfo header
 	sfo_header header;
-	memcpy(&header, SFO_BUFFER, sizeof(sfo_header));
+	memcpy(&header, sfo_buffer, sizeof(sfo_header));
 	
-	if(memcmp(header.magic, "\0PSF", sizeof(header.magic)) != 0) return -3; // check magic	
-	if(header.count > 200) return -4; // give up if more than 200 keys
-	if(sfo_size < (sizeof(sfo_header) + (sizeof(sfo_key) * header.count))) return -5; // check if size is enough for keys + sfo header size
+	if(memcmp(header.magic, "\0PSF", sizeof(header.magic)) != 0) ERROR(-4); // check magic	
+	if(header.count > 200) ERROR(-5); // give up if more than 200 keys
+	if(sfo_size < (sizeof(sfo_header) + (sizeof(sfo_key) * header.count))) ERROR(-6); // check if size is enough for keys + sfo header size
 	
 	uint32_t ptr = sizeof(sfo_header);
 	
 	// read keys
 	for(int i = 0; i < header.count; i++)
 	{
-		if(ptr >= sizeof(SFO_BUFFER)) return -6; // check for overflow
+		if(ptr > sfo_size) ERROR(-7); // check for overflow
 
 		char key_name[64];
 		char key_value[64];
 		
 		sfo_key s_key;
 		
-		memcpy(&s_key, SFO_BUFFER+ptr, sizeof(sfo_key));
+		memcpy(&s_key, sfo_buffer+ptr, sizeof(sfo_key));
 		ptr += sizeof(sfo_key);
 
 		if(s_key.type != PSF_TYPE_STR) continue;
 		
 		// calculate location of key in buffer
 		int name_offset = header.key_offset + s_key.name_offset;
-		if(name_offset > sfo_size) return -7;
+		if(name_offset > sfo_size) ERROR(-8);
 		
 		int data_offset = header.value_offset + s_key.data_offset;
-		if(data_offset > sfo_size) return -8;
+		if(data_offset > sfo_size) ERROR(-9);
 
 		// copy the key and value into buffers.
-		strncpy(key_name, SFO_BUFFER + name_offset, sizeof(key_name)-1);
-		strncpy(key_value, SFO_BUFFER + data_offset, sizeof(key_value)-1);		
+		strncpy(key_name, sfo_buffer + name_offset, sizeof(key_name)-1);
+		strncpy(key_value, sfo_buffer + data_offset, sizeof(key_value)-1);		
 
 		if(strncmp(key_name, key, sizeof(key_name)) == 0){
 			strncpy(out, key_value, sizeof(key_value)-1);
-			return 0;
+			ERROR(0);
 		}
 
 	}
-	return -9;
+error:
+	if(sfo_buffer != NULL)
+		free(sfo_buffer);
+	if(sfo_fd > 0) 
+		sceIoClose(sfo_fd);
+	return ret;
 }

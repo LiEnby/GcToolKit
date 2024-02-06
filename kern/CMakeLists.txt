@@ -24,6 +24,7 @@ add_executable(${PROJECT_NAME}
 	f00d.c
 	io.c
 	cobra.c
+	otg.c
 	format.c
 	cmd56.c
 )
