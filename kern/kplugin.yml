@@ -24,3 +24,5 @@ f00dbridge:
         - CloseDevice
         - GetDeviceSize
         - FormatDevice
+        - GetCardCsd
+        - GetCardId

@@ -319,6 +319,8 @@ void handle_menu_select_option() {
 				break;
 			case RESET_GRW0:
 				break;
+			case GET_GC_INFO:
+				break;
 			default:
 				break;
 		};
@@ -331,6 +333,8 @@ void handle_menu_select_option() {
 		handle_wipe_option(selected);
 	if(selected == WRITE_MEDIAID || selected == WRITE_GRW0)
 		handle_select_input_device(selected);
+	if(selected == GET_GC_INFO)
+		do_device_info();
 }
 
 int main() {

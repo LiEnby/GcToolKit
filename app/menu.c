@@ -113,9 +113,6 @@ void term_menus() {
 	free_texture(insertgc_tex);	
 }
 
-
-
-
 void draw_wipe_progress(char* device, char* unused, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Formatting", "Writing", device, device);
 }
@@ -149,6 +146,8 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	ADDOPT(has_grw0, "Backup Writable Section (.IMG)");
 	ADDOPT(has_grw0, "Restore Writable Section (.IMG)");
 	ADDOPT(has_grw0, "Format Writable Section");
+	
+	ADDOPT(1, "Get GC Information");
 	
 	end_draw();
 	
@@ -291,10 +290,58 @@ void draw_confirmation_message(char* title, char* msg) {
 	draw_title(title);
 
 	draw_text_center(200, msg);
-
 	draw_text_center(250, "Press any button to continue ...");
 	
 	end_draw();
+}
+
+void draw_device_info(char* cardId, char* cardCsd, uint8_t vendorId) {
+	start_draw();
+	draw_background();
+	
+	draw_title("GC Information");
+	
+	char msg[0x100];
+	snprintf(msg, sizeof(msg), "CID: %s", cardId);
+	draw_text_center(200, msg);
+
+	snprintf(msg, sizeof(msg), "CSD: %s", cardCsd);
+	draw_text_center(220, msg);
+
+	snprintf(msg, sizeof(msg), "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(vendorId), vendorId);
+	draw_text_center(240, msg);
+	
+	draw_text_center(280, "Press any button to continue ...");
+		
+	end_draw();
+}
+
+
+void do_device_info() {
+	char cardId[0xF];
+	char cardCsd[0xF];
+	
+	// cmd56 parms
+	uint16_t cardKeyId = 0x1;
+	char cardRandom[0x10];
+	
+	char cardIdHex[0x100];
+	char cardCsdHex[0x100];
+	char cardRandomHex[0x100];
+	
+	int cidRes = GetCardId(1, cardId);
+	int csdRes = GetCardCsd(1, cardCsd);
+	
+	if(cidRes >= 0 && csdRes >= 0){
+		TO_HEX(cardId, sizeof(cardId), cardIdHex, sizeof(cardIdHex));
+		TO_HEX(cardCsd, sizeof(cardCsd), cardCsdHex, sizeof(cardCsdHex));
+		
+		uint8_t vendorId = cardId[0xF];
+		
+		draw_device_info(cardIdHex, cardCsdHex, vendorId);		
+	}
+	get_key();
+	
 }
 
 int do_network_options(char* ip_address, unsigned short port) {	

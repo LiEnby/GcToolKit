@@ -62,6 +62,49 @@
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
+char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
+	char* vendor = "Unknown";
+	switch(vendorId) {
+		case 0x00:
+			vendor = "Sandisk";
+			break;
+		case 0x02:
+			vendor = "Kingston or SanDisk";
+			break;
+		case 0x03:
+		case 0x11:
+			vendor = "Toshiba";
+			break;
+		case 0x13:
+			vendor = "Micron";
+			break;
+		case 0x15:
+			vendor = "Samsung or SanDisk or LG";
+			break;
+		case 0x37:
+			vendor = "KingMax";
+			break;
+		case 0x44:
+			vendor = "ATP";
+			break;
+		case 0x45:
+			vendor = "SanDisk Corporation";
+			break;
+		case 0x2c:
+		case 0x70:
+			vendor = "Kingston";
+			break;
+		case 0x90:
+			vendor = "Hynix";
+			break;
+		case 0xfe:
+			vendor = "Micron";
+			break;
+	}
+	
+	return vendor;
+}
+
 uint8_t device_exist(char* block_device) {
 	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
 	

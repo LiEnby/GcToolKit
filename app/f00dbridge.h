@@ -16,6 +16,9 @@ void GetDeviceSize(int device_handle, uint64_t* device_size);
 
 int FormatDevice(char* device);
 
+int GetCardId(int deviceIndex, void* cardId);
+int GetCardCsd(int deviceIndex, void* cardCsd);
+
 typedef struct SceSblSmCommGcData {
     int always1;
     int command;

@@ -27,6 +27,7 @@ add_executable(${PROJECT_NAME}
 	otg.c
 	format.c
 	cmd56.c
+	gc.c
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -43,6 +44,7 @@ target_link_libraries(${PROJECT_NAME}
 	SceSysmemForDriver_stub
 	SceDebugForDriver_stub
 	ScePowerForDriver_stub
+	SceSdifForDriver_stub
 	SceSysconForDriver_stub
 	SceSblGcAuthMgrGcAuthForDriver_stub
 	SceSblGcAuthMgrDrmBBForDriver_stub

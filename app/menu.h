@@ -12,6 +12,7 @@ void do_confirm_message(char* title, char* msg);
 int do_network_options(char* ip_address, unsigned short port);
 void do_ime();
 int do_error(int error);
+void do_device_info();
 
 void init_menus();
 void term_menus();
@@ -24,8 +25,8 @@ enum insert_menu_options {
 	RESET_MEDIAID,
 	DUMP_GRW0,
 	WRITE_GRW0,
-	RESET_GRW0
-	
+	RESET_GRW0,
+	GET_GC_INFO
 };
 
 enum select_network_options {

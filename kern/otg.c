@@ -7,6 +7,7 @@ SceUID sceSysconSetOtgPowerLevelHook = -1;
 static tai_hook_ref_t sceSysconSetOtgPowerLevelHookRef;
 
 
+
 static int return_1() {
 	return 1;
 }
@@ -31,7 +32,7 @@ int load_umass() {
 	if(ksceKernelSearchModuleByName("SceUsbMass") < 0) {
 		tai_hook_ref_t ksceSysrootIsSafeModeHookRef;
 		tai_hook_ref_t ksceSblAimgrIsDolceHookRef;
-		
+
 		// temporarily patch isSafeMode and isDolce
 		SceUID ksceSysrootIsSafeModeHook = taiHookFunctionExportForKernel(KERNEL_PID, 
 			&ksceSysrootIsSafeModeHookRef, 
@@ -54,11 +55,10 @@ int load_umass() {
 		PRINT_STR("ksceSblAimgrIsDolceHook 0x%04X\n", ksceSblAimgrIsDolceHook);
 		PRINT_STR("ksceSblAimgrIsDolceHookRef 0x%04X\n", ksceSblAimgrIsDolceHookRef);
 		
-		// start from here, technically the module is actually in os0 bootimage
-		// but cannot start after system already started, unfortunately.
+		// load from the bootimage
 		SceUID umass_modid = ksceKernelLoadStartModule("ux0:VitaShell/module/umass.skprx", 0, NULL, 0, NULL, NULL);
 		PRINT_STR("Load umass.skprx 0x%04X\n", umass_modid);
-		
+				
 		// release hooks
 		if(ksceSysrootIsSafeModeHook > 0) taiHookReleaseForKernel(ksceSysrootIsSafeModeHook, ksceSysrootIsSafeModeHookRef);
 		if(ksceSblAimgrIsDolceHook > 0) taiHookReleaseForKernel(ksceSblAimgrIsDolceHook, ksceSblAimgrIsDolceHookRef);
