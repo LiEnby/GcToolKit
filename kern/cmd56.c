@@ -90,7 +90,6 @@ int ResetCmd20Input() {
 
 int GetLastCmd20Input(char* cmd20_input) {
 	ksceKernelMemcpyKernelToUser(cmd20_input, (const void*)LAST_CAPTURED_CMD20_INPUT, sizeof(LAST_CAPTURED_CMD20_INPUT));
-		
 	return 0;
 }
 
