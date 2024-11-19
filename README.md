@@ -39,7 +39,8 @@ SHA256 is a one-way function and so you cannot go backwards from
 the data captured in psvgamesd to the packet20 and packet18 constants.
 
 main advantage is that with VCI it would be thereotically possible to create a vita flash cartridge. .
-this, also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI.
+this, also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI
 
+for tools to convert to/from VCI format to others, see: https://silica.codes/Li/VCI-TOOLS
 
 ![gc authentication diagram](https://silica.codes/Li/GcDumper/raw/branch/main/diagram.png)
