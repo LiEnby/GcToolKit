@@ -12,6 +12,8 @@ Can run a backup over the network, to a offical memory card,
 a USB device connected to a Vita TV or OTG on Vita 2k, or Accessory Port on Vita 1K
 or host0 on Development Kits.
 
+# NOTE: you have to disable YAMT or other SD2Vita drivers before using this (as they disable GC Authentication)
+
 -- Credit
 -  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
 - olebeck - CMD56 helps
