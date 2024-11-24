@@ -66,7 +66,7 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 			case START_DUMP:
 				break;
 			case OP_CANCELED:
-				return;
+				return OP_CANCELED;
 		}
 		
 		break;
@@ -173,7 +173,9 @@ void handle_menu_set_output(char* fmt, int what) {
 		res = handle_menu_set_network_options(what, block_device, output_filename);
 	}
 	
-	char msg[0x1028];	
+	if(res == OP_CANCELED) return;
+	
+	char msg[0x1028];
 	if(res < 0) {
 		do_error(res);
 	}
@@ -301,6 +303,7 @@ void handle_menu_select_option() {
 	
 	char* fmt = "";
 	int selected = -1;
+	
 	while(1) {
 		selected = do_gc_options();
 		switch(selected) {
