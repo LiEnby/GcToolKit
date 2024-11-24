@@ -1,4 +1,6 @@
 #include <stdint.h>
+#define OP_CANCELED (-9530)
+
 
 void do_gc_insert_prompt();
 int do_gc_options();

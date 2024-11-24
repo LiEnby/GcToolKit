@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <taihen.h>
 #include <vitasdk.h>
-
 #include <vita2d.h>
 
 #include "crypto.h"
@@ -66,6 +65,8 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 				break;
 			case START_DUMP:
 				break;
+			case OP_CANCELED:
+				return;
 		}
 		
 		break;
@@ -140,6 +141,8 @@ void handle_menu_set_output(char* fmt, int what) {
 			case O_RELOAD_DEVICES:
 				continue;
 				break;
+			case OP_CANCELED:
+				return;
 			default:
 				return;
 		};
@@ -190,6 +193,8 @@ void handle_wipe_option(int what) {
 		case RESET_GRW0:
 			block_device = BLOCK_DEVICE_GRW0;
 			break;
+		case OP_CANCELED:
+			return;
 		default:
 			return;
 	}
@@ -217,6 +222,8 @@ void handle_select_file(int what, char* folder) {
 			block_device = BLOCK_DEVICE_GRW0;
 			extension = ".img";
 			break;
+		case OP_CANCELED:
+			return;
 		default:
 			return;
 	}
@@ -273,6 +280,8 @@ void handle_select_input_device(int what) {
 			case I_RELOAD_DEVICES:
 				continue;
 				break;
+			case OP_CANCELED:
+				return;
 			default:
 				break;
 		};
@@ -335,6 +344,8 @@ void handle_menu_select_option() {
 		handle_select_input_device(selected);
 	if(selected == GET_GC_INFO)
 		do_device_info();
+	if(selected == OP_CANCELED)
+		do_gc_insert_prompt();
 }
 
 int main() {
@@ -345,8 +356,8 @@ int main() {
 	init_network();
 	init_sound();
 	
+	do_gc_insert_prompt();
 	while(1) {
-		do_gc_insert_prompt();
 		handle_menu_select_option();
 	}
 	

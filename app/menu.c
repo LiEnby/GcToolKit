@@ -68,6 +68,8 @@ static uint8_t options[0x1000];
 								selected++; \
 							 } while(selected < sizeof(options) && options[selected] == 0); \
 							 break; \
+					     case SCE_CTRL_CIRCLE: \
+							 return OP_CANCELED; \
 						 case SCE_CTRL_CROSS: \
 							 break; \
 					  } \
