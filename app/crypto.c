@@ -27,6 +27,7 @@ static uint8_t GCAUTHMGR_8003_SEED[0x10] = { 0x36, 0x8b, 0x2e, 0xb5, 0x43, 0x7a,
 static uint8_t GCAUTHMGR_1_SEED[0x10] 	 = { 0x7f, 0x1f, 0xd0, 0x65, 0xdd, 0x2f, 0x40, 0xb3, 0xe2, 0x65, 0x79, 0xa6, 0x39, 0x0b, 0x61, 0x6d };
 
 static uint8_t GCAUTHMGR_1_IV[0x10] = { 0x8b, 0x14, 0xc8, 0xa1, 0xe9, 0x6f, 0x30, 0xa7, 0xf1, 0x01, 0xa9, 0x6a, 0x30, 0x33, 0xc5, 0x5b };
+static uint8_t ZERO_IV[0x10] = { 0 };
 
 void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
 	uint8_t* kseed = NULL;
@@ -103,22 +104,18 @@ int key_dump(char* output_file) {
 }
 
 
-void decrypt(uint8_t* key, uint8_t* data, size_t dataLen) {	
-	AES_ECB_decrypt(data, data, dataLen, key, 0x10);
-}
-
 void decrypt_packet18_klic(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* klic) {
 	char wbuf[0x30];
-	memcpy(wbuf, packet18+3, sizeof(wbuf));
-	decrypt(secondaryKey0, wbuf, sizeof(wbuf));
+	
+	AES_CBC_decrypt(packet18+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 	
 	memcpy(klic, wbuf+0x10, 0x20);
 }
 
 void decrypt_packet20_rifbuf(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* rifBuffer) {
 	char wbuf[0x40];
-	memcpy(wbuf, packet20+3, sizeof(wbuf));
-	decrypt(secondaryKey0, wbuf, sizeof(wbuf));
+	
+	AES_CBC_decrypt(packet20+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 
 	memcpy(rifBuffer, wbuf+0x18, 0x20);
 
@@ -249,16 +246,11 @@ int extract_gc_keys(GcKEYS* keys) {
 		PRINT_STR("masterKey ");
 		PRINT_BUFFER(masterKey);
 
-		uint8_t secondaryKey0[0x10];			
-		AES_ECB_decrypt(cmdData.packet9, secondaryKey0, sizeof(secondaryKey0), masterKey, sizeof(masterKey));
+		uint8_t secondaryKey0[0x10];
+		AES_CBC_decrypt(cmdData.packet9, secondaryKey0, sizeof(secondaryKey0), masterKey, sizeof(masterKey), ZERO_IV);
 
 		PRINT_STR("secondaryKey0 ");
 		PRINT_BUFFER(secondaryKey0);
-
-		// decrypt secondaryKey0 (requires f00d)
-		
-		//memset(secondaryKey0, 0xFF, sizeof(secondaryKey0));
-		//DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
 	
 			
 		// decrypt klic part from packet18

@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# Install PSP2SPL library
-cp kern/psp2spl/libSKPLForKernel_stub.a $VITASDK/arm-vita-eabi/lib/libSKPLForKernel_stub.a
-
 # Build Kern
 cd kern
 mkdir build

@@ -21,7 +21,6 @@ link_directories(
 
 add_executable(${PROJECT_NAME}
 	main.c
-	f00d.c
 	io.c
 	cobra.c
 	otg.c

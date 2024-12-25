@@ -32,15 +32,10 @@ void load_kernel_modules() {
 		// get current title id
 		char titleid[12];
 		sceAppMgrAppParamGetString(0, 12, titleid , 256);
-
-		// load psp2spl
-		snprintf(kplugin_path, sizeof(kplugin_path), "ux0:app/%s/psp2spl.skprx", titleid);
-		SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-		PRINT_STR("start %s = %x\n", kplugin_path, uid);
 		
 		// load f00dbridge
 		snprintf(kplugin_path, sizeof(kplugin_path), "ux0:app/%s/kplugin.skprx", titleid);
-		uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
+		SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
 		PRINT_STR("start %s = %x\n", kplugin_path, uid);
 		if(uid < 0) return;
 		

@@ -2,7 +2,7 @@ f00dbridge:
   attributes: 0
   version:
     major: 1
-    minor: 5
+    minor: 6
   main:
     start: module_start
     stop: module_stop
@@ -13,7 +13,6 @@ f00dbridge:
         - ResetGc
         - ClearFinalKeys
         - GetFinalKeys
-        - DecryptSecondaryKey0
         - GetLastCmd20Input
         - GetLastCmd20KeyId
         - HasCmd20Captured

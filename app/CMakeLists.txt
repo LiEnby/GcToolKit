@@ -92,7 +92,6 @@ vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} eboot.bin
   NAME ${VITA_APP_NAME}
 
   FILE ../kern/build/kplugin.skprx kplugin.skprx
-  FILE ../kern/psp2spl/psp2spl.skprx psp2spl.skprx
   
   FILE res/sce_sys/icon0.png sce_sys/icon0.png
   FILE res/sce_sys/pic0.png sce_sys/pic0.png

@@ -6,7 +6,6 @@ int HasCmd20Captured();
 int GetLastCmd20KeyId();
 int GetLastCmd20Input(char* cmd20_input);
 int ResetCmd20Input();
-void DecryptSecondaryKey0(void* data, uint32_t key_id, void* packet9, void* out);
 
 int OpenDevice(char* device, int permission);
 int ReadDevice(int device_handle, uint8_t* data, int size);
