@@ -4,6 +4,8 @@
 #include <vitasdk.h>
 
 #include "aes.h"
+#include "aes_cmac.h"
+
 #include "sha256.h"
 #include "sha1.h"
 
@@ -15,6 +17,48 @@
 #include "net.h"
 #include "err.h"
 #include "log.h"
+
+static uint8_t BIGMAC_KEY_0x345[0x20] = { 0x74, 0xC3, 0x9C, 0xA4, 0xEF, 0x4F, 0x12, 0x29, 0x15, 0xC7, 0x1E, 0xDA, 0x46, 0xC8, 0x8B, 0x55, 0xBB, 0xAD, 0x1F, 0x40, 0x33, 0xD7, 0x55, 0xCE, 0xA0, 0x56, 0x3C, 0xC3, 0x41, 0xF9, 0x2E, 0x66 };
+static uint8_t BIGMAC_KEY_0x348[0x20] = { 0xC0, 0x26, 0x28, 0x14, 0x13, 0xFA, 0x46, 0x2C, 0xCD, 0xEE, 0xD4, 0xBD, 0x6D, 0x08, 0xC3, 0x7C, 0xA6, 0xC9, 0x32, 0x2A, 0xBD, 0x4C, 0x40, 0xAD, 0xE7, 0x2A, 0x0F, 0x54, 0x4F, 0x40, 0x13, 0xAD };
+
+static uint8_t GCAUTHMGR_8001_SEED[0x10] = { 0x6f, 0x22, 0x85, 0xed, 0x46, 0x3a, 0x6e, 0x57, 0xc5, 0xf3, 0x55, 0x0d, 0xdc, 0xc8, 0x1f, 0xeb };
+static uint8_t GCAUTHMGR_8002_SEED[0x10] = { 0xda, 0x96, 0x08, 0xb5, 0x28, 0x82, 0x5d, 0x6d, 0x13, 0xa7, 0xaf, 0x14, 0x46, 0xb8, 0xec, 0x08 };
+static uint8_t GCAUTHMGR_8003_SEED[0x10] = { 0x36, 0x8b, 0x2e, 0xb5, 0x43, 0x7a, 0x82, 0x18, 0x62, 0xa6, 0xc9, 0x55, 0x96, 0xd8, 0xc1, 0x35 };
+static uint8_t GCAUTHMGR_1_SEED[0x10] 	 = { 0x7f, 0x1f, 0xd0, 0x65, 0xdd, 0x2f, 0x40, 0xb3, 0xe2, 0x65, 0x79, 0xa6, 0x39, 0x0b, 0x61, 0x6d };
+
+static uint8_t GCAUTHMGR_1_IV[0x10] = { 0x8b, 0x14, 0xc8, 0xa1, 0xe9, 0x6f, 0x30, 0xa7, 0xf1, 0x01, 0xa9, 0x6a, 0x30, 0x33, 0xc5, 0x5b };
+
+void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
+	uint8_t* kseed = NULL;
+	uint8_t x21[0x10];
+	uint8_t cmac[0x10];
+	
+	switch (keyId) {
+	case 0x8001:
+		kseed = GCAUTHMGR_8001_SEED;
+		break;
+	case 0x8002:
+		kseed = GCAUTHMGR_8002_SEED;
+		break;
+	case 0x8003:
+		kseed = GCAUTHMGR_8003_SEED;
+		break;
+	case 0x1:
+		kseed = GCAUTHMGR_1_SEED;
+		break;
+	}
+
+	AES_ECB_decrypt(kseed, x21, sizeof(x21), BIGMAC_KEY_0x345, 0x20);
+	aes_cmac(cartRandom, 0x20, x21, cmac);
+	
+	if (keyId == 0x1) {
+		AES_CBC_decrypt(cmac, masterkey, 0x10, BIGMAC_KEY_0x348, 0x10, GCAUTHMGR_1_IV);
+	}
+	else {
+		memcpy(masterkey, cmac, sizeof(cmac));
+	}
+
+}
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	GcKEYS keys;
@@ -59,13 +103,8 @@ int key_dump(char* output_file) {
 }
 
 
-void decrypt(uint8_t* masterKey, uint8_t* data, size_t dataLen) {
-	char iv[0x10];
-	memset(iv, 0x00, sizeof(iv));
-	
-	struct AES_ctx ctx;
-	AES_init_ctx_iv(&ctx, masterKey, iv);
-	AES_CBC_decrypt_buffer(&ctx, data, dataLen);
+void decrypt(uint8_t* key, uint8_t* data, size_t dataLen) {	
+	AES_ECB_decrypt(data, data, dataLen, key, 0x10);
 }
 
 void decrypt_packet18_klic(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* klic) {
@@ -203,13 +242,24 @@ int extract_gc_keys(GcKEYS* keys) {
 		int keyId = GetLastCmd20KeyId();
 		PRINT_STR("keyId = %x\n", keyId);
 		
-		// decrypt secondaryKey0 (requires f00d)
-		uint8_t secondaryKey0[0x10];
-		memset(secondaryKey0, 0xFF, sizeof(secondaryKey0));
-		DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
-	
+		
+		uint8_t masterKey[0x10];
+		derive_master_key(cmdData.packet6, masterKey, keyId);
+
+		PRINT_STR("masterKey ");
+		PRINT_BUFFER(masterKey);
+
+		uint8_t secondaryKey0[0x10];			
+		AES_ECB_decrypt(cmdData.packet9, secondaryKey0, sizeof(secondaryKey0), masterKey, sizeof(masterKey));
+
 		PRINT_STR("secondaryKey0 ");
 		PRINT_BUFFER(secondaryKey0);
+
+		// decrypt secondaryKey0 (requires f00d)
+		
+		//memset(secondaryKey0, 0xFF, sizeof(secondaryKey0));
+		//DecryptSecondaryKey0(cmdData.packet6, keyId, cmdData.packet9, secondaryKey0);	
+	
 			
 		// decrypt klic part from packet18
 		decrypt_packet18_klic(secondaryKey0, cmdData.packet18, keys->klic);

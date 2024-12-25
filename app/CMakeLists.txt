@@ -31,6 +31,7 @@ link_directories(
 
 add_executable(${PROJECT_NAME}
 	aes.c
+	aes_cmac.c
 	sha256.c
 	sha1.c
 	ctrl.c

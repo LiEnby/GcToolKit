@@ -1,6 +1,5 @@
 void DecryptSecondaryKey0(void* data, uint32_t key_id, void* packet9, void* out);
 
-
 typedef struct CommsData { 
     uint8_t packet6[32];
     uint8_t packet9[48];

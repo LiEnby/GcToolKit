@@ -5,6 +5,7 @@
 #include "cmd56.h"
 #include "cobra.h"
 #include "format.h"
+#include "otg.h"
 
 void _start() __attribute__((weak, alias("module_start")));
 int module_start(SceSize argc, const void *args)
@@ -13,7 +14,6 @@ int module_start(SceSize argc, const void *args)
 	otg_patch(); // enable otg
 	cmd56_patch(); // patch cmd56
 	get_module_functions(); // get format stuff
-	
 	return SCE_KERNEL_START_SUCCESS;
 }
 
