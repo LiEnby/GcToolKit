@@ -30,11 +30,9 @@ add_executable(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-	SKPLForKernel_stub
 	taihenForKernel_stub
 	taihenModuleUtils_stub
 	SceRtcForDriver_stub
-	SceSysmemForDriver_stub
 	SceModulemgrForDriver_stub
 	SceThreadmgrForDriver_stub
 	SceSblSmCommForKernel_stub

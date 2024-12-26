@@ -142,9 +142,16 @@ int ClearFinalKeys() {
 }
 
 int GetFinalKeys(char* keys) {
-	char k_keys[0x20];
+	char k_keys[0x100];
 	memset(k_keys, 0x00, sizeof(k_keys));
+	
 	int res = ksceSblGcAuthMgrDrmBBGetCartSecret(k_keys);
-	ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
+	PRINT_STR("ksceSblGcAuthMgrDrmBBGetCartSecret res 0x%X\n", res);
+	PRINT_STR("keys : %x k_keys: %x\n", keys, k_keys);
+	
+	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, 0x20);
+	
+	PRINT_STR("memcpy done\n");
+	
 	return res;
 }

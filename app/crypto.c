@@ -137,19 +137,29 @@ void wait_for_gc_auth() {
 }
 
 uint8_t verify_klic_keys(GcKEYS* keys) {
-	char got_final_keys[SHA256_BLOCK_SIZE];
-	char expected_final_keys[SHA256_BLOCK_SIZE];
+	char got_final_keys[0x20];
+	char expected_final_keys[0x20];
+	
+	PRINT_STR("verifying klic key ...\n");
+	
 	int res = GetFinalKeys(got_final_keys);
+	PRINT_STR("GetFinalKeys res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
 	if(res < 0) goto error;
 	
-	// final key should == sha256 of klic key
+	// final key should == sha256 of klic+rif key
 	SHA256_CTX ctx;
 	
+	PRINT_STR("SHA256_INIT RUN\n");
 	sha256_init(&ctx);
+
+	PRINT_STR("SHA256_UPDATE RUN\n");
 	sha256_update(&ctx, keys, sizeof(GcKEYS));
+
+	PRINT_STR("SHA256_FINAL RUN\n");
 	sha256_final(&ctx, expected_final_keys);
 	
-	if(memcmp(got_final_keys, expected_final_keys, SHA256_BLOCK_SIZE) == 0) {
+	if(memcmp(got_final_keys, expected_final_keys, sizeof(expected_final_keys)) == 0) {
+		PRINT_STR("KEYS VERIFIED SUCCESS!\n");
 		return 1;
 	}
 error:	
@@ -236,9 +246,9 @@ int extract_gc_keys(GcKEYS* keys) {
 		// get captured cmd56 authentication data
 		CommsData cmdData;
 		GetLastCmd20Input(&cmdData);
+		
 		int keyId = GetLastCmd20KeyId();
 		PRINT_STR("keyId = %x\n", keyId);
-		
 		
 		uint8_t masterKey[0x10];
 		derive_master_key(cmdData.packet6, masterKey, keyId);
@@ -251,13 +261,18 @@ int extract_gc_keys(GcKEYS* keys) {
 
 		PRINT_STR("secondaryKey0 ");
 		PRINT_BUFFER(secondaryKey0);
-	
 			
 		// decrypt klic part from packet18
 		decrypt_packet18_klic(secondaryKey0, cmdData.packet18, keys->klic);
 
+		PRINT_STR("packet18_klic: ");
+		PRINT_BUFFER(keys->klic);
+
 		// decrypt rif part from packet20
 		decrypt_packet20_rifbuf(secondaryKey0, cmdData.packet20, keys->rifbuf);
+		
+		PRINT_STR("packet20_rifbuf: ");
+		PRINT_BUFFER(keys->rifbuf);
 		
 		// verify klic key
 		if(!verify_klic_keys(keys)) return -3;
