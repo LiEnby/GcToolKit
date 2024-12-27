@@ -8,11 +8,8 @@ typedef struct sd_context_part_base {
    uint32_t def_sector_size_mmc; // looks like default sector size - used in mmc read/write commands for resp_block_size_24
    uint32_t def_sector_size_sd; // looks like default sector size - used in sd read/write commands for resp_block_size_24
 
-   uint8_t unk_10; // can be padding
-   uint8_t CID[15]; // this is CID data but in reverse
-
-   uint8_t unk_20; // can be padding
-   uint8_t CSD[15]; // this is CSD data but in reverse
+   uint8_t CID[0x10]; // this is CID data but in reverse
+   uint8_t CSD[0x10]; // this is CSD data but in reverse
 } sd_context_part_base;
 
 typedef enum SceSdifDevice {
