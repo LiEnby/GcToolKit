@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
 project(gc_backup_network)
 
+IF(CMAKE_SYSTEM_NAME MATCHES "^MINGW")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc -Wl,-Bstatic -O3")
+ELSE()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
+ENDIF()
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fno-rtti -fno-exceptions")
 
