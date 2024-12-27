@@ -149,7 +149,8 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	ADDOPT(has_grw0, "Restore Writable Section (.IMG)");
 	ADDOPT(has_grw0, "Format Writable Section");
 	
-	ADDOPT(1, "Get GC Information");
+	ADDOPT(1, "Get Game Cart Info");
+	ADDOPT(1, "Swap Game Carts");
 	
 	end_draw();
 	
@@ -320,16 +321,18 @@ void draw_device_info(char* cardId, char* cardCsd, uint8_t vendorId) {
 
 
 void do_device_info() {
-	char cardId[0xF];
-	char cardCsd[0xF];
+	char cardId[0x10];
+	char cardCsd[0x10];
+	memset(cardId, 0xFF, sizeof(cardId);
+	memset(cardCsd, 0xFF, sizeof(cardCsd);
 	
-	// cmd56 parms
+	// TODO: read cmd56 parms
 	uint16_t cardKeyId = 0x1;
 	char cardRandom[0x10];
 	
 	char cardIdHex[0x100];
 	char cardCsdHex[0x100];
-	char cardRandomHex[0x100];
+	char cardRandom[0x100];
 	
 	int cidRes = GetCardId(1, cardId);
 	int csdRes = GetCardCsd(1, cardCsd);

@@ -5,6 +5,7 @@
 
 #include <vitasdkkern.h>
 #include <taihen.h>
+#include "mod.h"
 
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 
@@ -128,8 +129,17 @@ void get_module_functions() {
 	SceUID module_id;
 
 	module_id = ksceKernelSearchModuleByName("SceAppMgr");
+	
+	int appmgr_version = check_module_version("os0:/kd/bootimage.skprx");
+	
 	if(module_id > 0){
-		module_get_offset(KERNEL_PID, module_id, 0, 0x39B54 | 1, (uintptr_t*)&sceAppMgrMakeFatTime);
-		module_get_offset(KERNEL_PID, module_id, 0, 0x3E238 | 1, (uintptr_t*)&sceAppMgrExecFsFatFormat);
+		if(appmgr_version >= 0x363) {
+			module_get_offset(KERNEL_PID, module_id, 0, 0x39B40 | 1, (uintptr_t*)&sceAppMgrMakeFatTime);
+			module_get_offset(KERNEL_PID, module_id, 0, 0x3E224 | 1, (uintptr_t*)&sceAppMgrExecFsFatFormat);
+		}
+		else {
+			module_get_offset(KERNEL_PID, module_id, 0, 0x39B54 | 1, (uintptr_t*)&sceAppMgrMakeFatTime);
+			module_get_offset(KERNEL_PID, module_id, 0, 0x3E238 | 1, (uintptr_t*)&sceAppMgrExecFsFatFormat);			
+		}
 	}	
 }

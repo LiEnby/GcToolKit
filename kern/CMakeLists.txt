@@ -25,6 +25,7 @@ add_executable(${PROJECT_NAME}
 	cobra.c
 	otg.c
 	format.c
+	mod.c
 	cmd56.c
 	gc.c
 )

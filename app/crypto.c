@@ -275,12 +275,13 @@ int extract_gc_keys(GcKEYS* keys) {
 		PRINT_BUFFER(keys->rifbuf);
 		
 		// verify klic key
+		
 		if(!verify_klic_keys(keys)) return -3;
 		
 		// verify rif buffer
 		if(file_exist("gro0:"))
 			if(!verify_rif_keys(keys)) return -2;
-
+		
 		
 		return 0;
 	}

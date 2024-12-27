@@ -333,6 +333,8 @@ void handle_menu_select_option() {
 				break;
 			case GET_GC_INFO:
 				break;
+			case SWAP_GC:
+				break;
 			default:
 				break;
 		};
@@ -347,7 +349,7 @@ void handle_menu_select_option() {
 		handle_select_input_device(selected);
 	if(selected == GET_GC_INFO)
 		do_device_info();
-	if(selected == OP_CANCELED)
+	if(selected == OP_CANCELED || selected == SWAP_GC)
 		do_gc_insert_prompt();
 }
 

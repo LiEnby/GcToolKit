@@ -1,0 +1,1 @@
+int check_module_version(const char* module);

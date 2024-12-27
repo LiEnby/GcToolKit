@@ -28,7 +28,8 @@ enum insert_menu_options {
 	DUMP_GRW0,
 	WRITE_GRW0,
 	RESET_GRW0,
-	GET_GC_INFO
+	GET_GC_INFO,
+	SWAP_GC
 };
 
 enum select_network_options {

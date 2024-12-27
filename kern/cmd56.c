@@ -4,6 +4,7 @@
 #include <vitasdkkern.h>
 #include "cmd56.h"
 #include "log.h"
+#include "mod.h"
 
 // static variables
 static uint8_t LAST_CAPTURED_CMD20_INPUT[0x116];
@@ -37,16 +38,26 @@ void cmd56_patch() {
 	
 	tai_module_info_t gc_authmgr_info;
 	gc_authmgr_info.size = sizeof(tai_module_info_t);
-	int authmgr_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSblGcAuthMgr", &gc_authmgr_info);
-	PRINT_STR("get module SceSblGcAuthMgr 0x%04X\n", authmgr_get_info);
+	int gcauthmgr_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSblGcAuthMgr", &gc_authmgr_info);
+	int gcauthmgr_version = check_module_version("os0:/kd/gcauthmgr.skprx");
 	
-	if(authmgr_get_info >= 0) {
+	PRINT_STR("get module SceSblGcAuthMgr 0x%04X (version: 0x%x)\n", gcauthmgr_get_info, gcauthmgr_version);
+	
+	if(gcauthmgr_get_info >= 0) {
 		// prototype game carts use key ids != 1,
 		// 3.60 firmware checks if ((key_id & 0xffff7fff) == 1)
 		// it would be nice if we could dump prototype gamecarts tho ..
 	
 		uint16_t nop_instruction = 0xBF00;
-		proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, gc_authmgr_info.modid, 0, 0x9376, &nop_instruction, sizeof(uint16_t));
+		
+		if(gcauthmgr_version >= 0x363) {
+			proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, gc_authmgr_info.modid, 0, 0x95F8, &nop_instruction, sizeof(uint16_t));
+		}
+		else {
+			proto_keyid_check_inject = taiInjectDataForKernel(KERNEL_PID, gc_authmgr_info.modid, 0, 0x9376, &nop_instruction, sizeof(uint16_t));
+		}
+
+		
 		PRINT_STR("proto_keyid_check_inject 0x%04X\n", proto_keyid_check_inject);
 		
 		// capture sm communications
@@ -64,7 +75,7 @@ void cmd56_patch() {
 	tai_module_info_t sdstor_info;
 	sdstor_info.size = sizeof(tai_module_info_t);
 	int sdstor_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
-	PRINT_STR("get module SceSdstor 0x%04X\n", authmgr_get_info);
+	PRINT_STR("get module SceSdstor 0x%04X\n", gcauthmgr_get_info);
 	
 	if(sdstor_get_info >= 0){
 		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x3BE0 | 1, (uintptr_t*)&gc_insert_interupt);
@@ -142,16 +153,11 @@ int ClearFinalKeys() {
 }
 
 int GetFinalKeys(char* keys) {
-	char k_keys[0x100];
+	char k_keys[0x20];
 	memset(k_keys, 0x00, sizeof(k_keys));
 	
 	int res = ksceSblGcAuthMgrDrmBBGetCartSecret(k_keys);
-	PRINT_STR("ksceSblGcAuthMgrDrmBBGetCartSecret res 0x%X\n", res);
-	PRINT_STR("keys : %x k_keys: %x\n", keys, k_keys);
-	
-	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, 0x20);
-	
-	PRINT_STR("memcpy done\n");
-	
+	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
+		
 	return res;
 }
