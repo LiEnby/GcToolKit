@@ -62,28 +62,28 @@ void derive_master_key(uint8_t* cartRandom, uint8_t* masterkey, int keyId) {
 }
 
 int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
-	GcKEYS keys;
+	GcCmd56Keys keys;
 	
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
 	
-	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcKEYS));
+	SceUID fd = begin_file_send(ip_address, port, output_file, sizeof(GcCmd56Keys));
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
-	int wr = file_send_data(fd, &keys, sizeof(GcKEYS));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKEYS));
+	int wr = file_send_data(fd, &keys, sizeof(GcCmd56Keys));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	end_file_send(fd);
 
 	if(wr == 0) return -1;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcKEYS)) return (wr * -1);
+	if(wr != sizeof(GcCmd56Keys)) return (wr * -1);
 
 	return 0;
 }
 
 int key_dump(char* output_file) {
-	GcKEYS keys;
+	GcCmd56Keys keys;
 	
 	int got_keys = extract_gc_keys(&keys);
 	if(got_keys < 0) return got_keys;
@@ -92,32 +92,32 @@ int key_dump(char* output_file) {
 	PRINT_STR("fd = %x\n", fd);
 	if(fd < 0) return fd;
 	
-	int wr = sceIoWrite(fd, &keys, sizeof(GcKEYS));
-	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcKEYS));
+	int wr = sceIoWrite(fd, &keys, sizeof(GcCmd56Keys));
+	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	sceIoClose(fd);
 
 	if(wr == 0) return -1;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcKEYS)) return (wr * -1);
+	if(wr != sizeof(GcCmd56Keys)) return (wr * -1);
 
 	return 0;
 }
 
 
-void decrypt_packet18_klic(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* klic) {
+void decrypt_packet18_key(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* packet18_key) {
 	char wbuf[0x30];
 	
 	AES_CBC_decrypt(packet18+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 	
-	memcpy(klic, wbuf+0x10, 0x20);
+	memcpy(packet18_key, wbuf+0x10, 0x20);
 }
 
-void decrypt_packet20_rifbuf(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* rifBuffer) {
+void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* packet20_key) {
 	char wbuf[0x40];
 	
 	AES_CBC_decrypt(packet20+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 
-	memcpy(rifBuffer, wbuf+0x18, 0x20);
+	memcpy(packet20_key, wbuf+0x18, 0x20);
 
 }
 
@@ -136,24 +136,24 @@ void wait_for_gc_auth() {
 	while(!HasCmd20Captured()) { sceKernelDelayThread(1000); };
 }
 
-uint8_t verify_klic_keys(GcKEYS* keys) {
+uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
 	char got_final_keys[0x20];
 	char expected_final_keys[0x20];
 	
-	PRINT_STR("verifying klic key ...\n");
+	PRINT_STR("verifying packet18_key ...\n");
 	
 	int res = GetFinalKeys(got_final_keys);
 	PRINT_STR("GetFinalKeys res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
 	if(res < 0) goto error;
 	
-	// final key should == sha256 of klic+rif key
+	// final key should == sha256 of packet18_key+rif key
 	SHA256_CTX ctx;
 	
 	PRINT_STR("SHA256_INIT RUN\n");
 	sha256_init(&ctx);
 
 	PRINT_STR("SHA256_UPDATE RUN\n");
-	sha256_update(&ctx, keys, sizeof(GcKEYS));
+	sha256_update(&ctx, keys, sizeof(GcCmd56Keys));
 
 	PRINT_STR("SHA256_FINAL RUN\n");
 	sha256_final(&ctx, expected_final_keys);
@@ -163,7 +163,7 @@ uint8_t verify_klic_keys(GcKEYS* keys) {
 		return 1;
 	}
 error:	
-	PRINT_STR("verify_klic_keys failed !\n");
+	PRINT_STR("verify_cmd56_keys failed !\n");
 	PRINT_STR("got_final_keys ");
 	PRINT_BUFFER(got_final_keys);
 	
@@ -173,7 +173,7 @@ error:
 	return 0;
 }
 
-uint8_t verify_rif_keys(GcKEYS* keys) {
+uint8_t verify_rif_keys(GcCmd56Keys* keys) {
 	int ret = 0;
 	char expected_final_rif_hash[SHA1_BLOCK_SIZE];
 	char got_final_rif_hash[SHA1_BLOCK_SIZE];
@@ -181,7 +181,7 @@ uint8_t verify_rif_keys(GcKEYS* keys) {
 	SHA1_CTX ctx;
 	
 	sha1_init(&ctx);
-	sha1_update(&ctx, keys->rifbuf, sizeof(keys->rifbuf));
+	sha1_update(&ctx, keys->packet20_key, sizeof(keys->packet20_key));
 	sha1_final(&ctx, expected_final_rif_hash);
 	
 	// get title id from license folder
@@ -241,7 +241,7 @@ error:
 	
 }
 
-int extract_gc_keys(GcKEYS* keys) {
+int extract_gc_keys(GcCmd56Keys* keys) {
 	if(HasCmd20Captured()) {
 		// get captured cmd56 authentication data
 		CommsData cmdData;
@@ -262,21 +262,21 @@ int extract_gc_keys(GcKEYS* keys) {
 		PRINT_STR("secondaryKey0 ");
 		PRINT_BUFFER(secondaryKey0);
 			
-		// decrypt klic part from packet18
-		decrypt_packet18_klic(secondaryKey0, cmdData.packet18, keys->klic);
+		// decrypt packet18_key part from packet18
+		decrypt_packet18_key(secondaryKey0, cmdData.packet18, keys->packet18_key);
 
-		PRINT_STR("packet18_klic: ");
-		PRINT_BUFFER(keys->klic);
+		PRINT_STR("packet18_key: ");
+		PRINT_BUFFER(keys->packet18_key);
 
 		// decrypt rif part from packet20
-		decrypt_packet20_rifbuf(secondaryKey0, cmdData.packet20, keys->rifbuf);
+		decrypt_packet20_key(secondaryKey0, cmdData.packet20, keys->packet20_key);
 		
-		PRINT_STR("packet20_rifbuf: ");
-		PRINT_BUFFER(keys->rifbuf);
+		PRINT_STR("packet20_key: ");
+		PRINT_BUFFER(keys->packet20_key);
 		
-		// verify klic key
+		// verify packet18_key key
 		
-		if(!verify_klic_keys(keys)) return -3;
+		if(!verify_cmd56_keys(keys)) return -3;
 		
 		// verify rif buffer
 		if(file_exist("gro0:"))

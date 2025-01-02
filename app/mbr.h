@@ -27,10 +27,6 @@ enum GcTYPE {
 	GcTYPE_RAW = 0xDA
 };
 
-typedef struct GcKEYS{
-	uint8_t rifbuf[0x20];
-	uint8_t klic[0x20];
-} GcKEYS;
 
 typedef struct GcPART {
 	uint32_t off;

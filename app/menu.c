@@ -456,7 +456,7 @@ int do_device_restore(char* block_device, char* input_file) {
 
 int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
 	
-	GcKEYS keys;
+	GcCmd56Keys keys;
 	if(vci){
 		int res = extract_gc_keys(&keys);
 		if(res < 0) return res;

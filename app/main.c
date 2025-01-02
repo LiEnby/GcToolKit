@@ -108,7 +108,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	PRINT_STR("output_filename: %s\n", output_filename);
 
 	// get total size
-	uint64_t total_device_size = sizeof(GcKEYS);
+	uint64_t total_device_size = sizeof(GcCmd56Keys);
 	if(block_device != NULL)
 		total_device_size = device_size(block_device);
 	PRINT_STR("total_device_size %llx\n", total_device_size);

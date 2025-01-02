@@ -1,5 +1,5 @@
-#include "mbr.h"
+#include "vci.h"
 int key_dump_network(char* ip_address, unsigned short port, char* output_file);
 int key_dump(char* output_file);
 void wait_for_gc_auth();
-int extract_gc_keys(GcKEYS* keys);
+int extract_gc_keys(GcCmd56Keys* keys);

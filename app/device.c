@@ -34,19 +34,19 @@
 
 #define CREATE_VCI_HDR(wr_func) \
 	if(keys != NULL) { \
-		VciFile vci; \
-		memset(&vci, 0x00, sizeof(VciFile)); \
+		VciHeader vci; \
+		memset(&vci, 0x00, sizeof(VciHeader)); \
 		\
 		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic)); \
-		vci.version = 1; \
+		vci.version = VCI_VER; \
 		vci.devicesize = device_size; \
-		memcpy(&vci.keys, keys, sizeof(GcKEYS)); \
+		memcpy(&vci.keys, keys, sizeof(GcCmd56Keys)); \
 		\
-		int wr = wr_func(wr_fd, &vci, sizeof(VciFile)); \
+		int wr = wr_func(wr_fd, &vci, sizeof(VciHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
 		if(wr == 0) ERROR(-1); \
-		if(wr != sizeof(VciFile)) ERROR(wr * -1); \
+		if(wr != sizeof(VciHeader)) ERROR(wr * -1); \
 		if(wr < 0) ERROR(wr); \
 	}
 
@@ -148,7 +148,7 @@ int read_data_from_image(SceUID fd, char* data, int size) {
 	return size;
 }
 
-int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* path, GcKEYS* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;	
 	uint64_t total = 0;
 	
@@ -161,7 +161,7 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 	CREATE_DEV_SZ(rd_fd);
 	
 	// open socket
-	DO_CHECKED(wr_fd, begin_file_send, ip_address, port, path, (keys != NULL) ? device_size + sizeof(VciFile) : device_size);
+	DO_CHECKED(wr_fd, begin_file_send, ip_address, port, path, (keys != NULL) ? device_size + sizeof(VciHeader) : device_size);
 	
 	// write vci header
 	CREATE_VCI_HDR(file_send_data);
@@ -179,7 +179,7 @@ error:
 }
 
 
-int dump_device(char* block_device, char* path, GcKEYS* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int dump_device(char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
 	uint64_t total = 0;
 
