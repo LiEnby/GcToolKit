@@ -7,6 +7,7 @@
 #include "io.h"
 #include "net.h"
 #include "f00dbridge.h"
+#include "gc_ident.h"
 #include "kernel.h"
 #include "log.h"
 
@@ -49,7 +50,7 @@ static uint8_t options[0x1000];
 					  int last_option = 0;\
 					  CALC_FIRST_OPTION(); \
 					  CALC_LAST_OPTION(); \
-					  selected = first_option;\
+					  selected = first_option; \
 					  \
 					while (1) { \
 					  total_options = func(&selected, &window, __VA_ARGS__); \
@@ -150,7 +151,6 @@ int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, u
 	ADDOPT(has_grw0, "Format Writable Section");
 	
 	ADDOPT(1, "Get Game Cart Info");
-	ADDOPT(1, "Swap Game Carts");
 	
 	end_draw();
 	
@@ -257,7 +257,7 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	draw_title("Enter Network Address ...");
 
 	draw_text_center(200, "Run the \"gc_backup_network\" program");
-	draw_text_center(220, "it can be found in the readme for GC Backup.");
+	draw_text_center(220, "it can be found in the readme for GC ToolKit.");
 	draw_text_center(250, "and enter the IP of the device its running on.");
 
 	char output_txt[128];
@@ -286,6 +286,29 @@ void draw_ime() {
 	end_draw();
 }
 
+int draw_format_confirm_menu(int* selected, int* window, const char* device) {
+	start_draw();
+	draw_background();
+	
+	char output_txt[128];
+	snprintf(output_txt, sizeof(output_txt), "Format %s to TexFAT? ...", device);
+	draw_title(output_txt);
+	
+	draw_text_center(250, "Warning: this will ERASE ALL DATA ...");
+	snprintf(output_txt, sizeof(output_txt), "on partition \"%s\" ...", device);
+	draw_text_center(270, output_txt);
+	
+	DEFOPT(320);
+	ADDOPT(1, "Full format");
+	ADDOPT(1, "Quick format");
+	ADDOPT(1, "Cancel");
+	
+	end_draw();
+	
+	RETURNOPT();
+
+}
+
 void draw_confirmation_message(char* title, char* msg) {
 	start_draw();
 	draw_background();
@@ -298,55 +321,61 @@ void draw_confirmation_message(char* title, char* msg) {
 	end_draw();
 }
 
-void draw_device_info(char* cardId, char* cardCsd, uint8_t vendorId) {
+void draw_device_info(GcInfo* info) {
 	start_draw();
 	draw_background();
 	
 	draw_title("GC Information");
 	
-	char msg[0x100];
-	snprintf(msg, sizeof(msg), "CID: %s", cardId);
+	char hex[0x100];
+	char msg[0x200];
+	
+	memset(hex, hex, sizeof(hex));
+	memset(msg, msg, sizeof(msg));
+	
+	TO_HEX(info->Cid, sizeof(info->Cid), hex);
+	snprintf(msg, sizeof(msg), "CID:%s", hex);
+	draw_text_center(120, msg);
+	
+	TO_HEX(info->Csd, sizeof(info->Cid), hex);
+	snprintf(msg, sizeof(msg), "CSD:%s", hex);
+	draw_text_center(140, msg);
+
+	snprintf(msg, sizeof(msg), "Extended CSD Revision: 0x%02X", info->ExtCsdRev);
+	draw_text_center(160, msg);
+	
+	snprintf(msg, sizeof(msg), "Device Name: %s", info->DeviceName);
+	draw_text_center(180, msg);
+
+	snprintf(msg, sizeof(msg), "Device Serial Number: 0x%X", info->DeviceSerial);
 	draw_text_center(200, msg);
-
-	snprintf(msg, sizeof(msg), "CSD: %s", cardCsd);
+	
+	snprintf(msg, sizeof(msg), "Device Revision: 0x%X", info->DeviceRev);
 	draw_text_center(220, msg);
-
-	snprintf(msg, sizeof(msg), "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(vendorId), vendorId);
+	
+	
+	snprintf(msg, sizeof(msg), "Vendor: %s (0x%02X)", mmc_vendor_id_to_manufacturer(info->Vendor), info->Vendor);
 	draw_text_center(240, msg);
 	
-	draw_text_center(280, "Press any button to continue ...");
+	snprintf(msg, sizeof(msg), "Manufactured Date: %u/%u", info->Month, info->Year);
+	draw_text_center(260, msg);
+	
+	snprintf(msg, sizeof(msg), "CMD56 KeyId 0x%x", info->KeyId);
+	draw_text_center(310, msg);
+	
+	draw_text_center(360, "Press any button to continue ...");
 		
 	end_draw();
 }
 
 
 void do_device_info() {
-	uint8_t cardId[0x10];
-	uint8_t cardCsd[0x10];
 	
-	memset(cardId, 0xFF, sizeof(cardId));
-	memset(cardCsd, 0xFF, sizeof(cardCsd));
+	GcInfo info;
 	
-	// TODO: read cmd56 parms
-	uint16_t cardKeyId = 0x1;
-	char cardRandom[0x10];
+	get_gc_info(&info);
+	draw_device_info(&info);		
 	
-	char cardRandomHex[0x100];
-	
-	char cardIdHex[0x100];
-	char cardCsdHex[0x100];
-	
-	int cidRes = GetCardId(1, cardId);
-	int csdRes = GetCardCsd(1, cardCsd);
-	
-	if(cidRes >= 0 && csdRes >= 0){
-		TO_HEX(cardId, sizeof(cardId), cardIdHex, sizeof(cardIdHex));
-		TO_HEX(cardCsd, sizeof(cardCsd), cardCsdHex, sizeof(cardCsdHex));
-		
-		uint8_t vendorId = cardId[0xF];
-		
-		draw_device_info(cardIdHex, cardCsdHex, vendorId);		
-	}
 	get_key();
 	
 }
@@ -407,7 +436,13 @@ void do_confirm_message(char* title, char* msg) {
 	get_key();
 }
 
-int do_device_wipe(char* block_device, uint8_t format) {
+
+int do_format_confirm(char* block_device) {
+	PROCESS_MENU(draw_format_confirm_menu, block_device);
+	return selected;
+}
+
+int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format) {
 	umount_gro0();
 	umount_grw0();
 	
@@ -416,10 +451,12 @@ int do_device_wipe(char* block_device, uint8_t format) {
 	mount_devices();
 	
 	lock_shell();
-	int res = wipe_device(block_device, draw_wipe_progress);
 	
-	if(format)
-		FormatDevice(block_device);
+	int res = 0;
+	
+	if(full) res = wipe_device(block_device, draw_wipe_progress);
+	if(!full) draw_wipe_progress(block_device, NULL, 1, 1);
+	if(format) res = FormatDevice(block_device);
 	
 	unlock_shell();
 
@@ -515,7 +552,7 @@ int do_error(int error) {
 	return 0;
 }
 
-int do_select_output_location(char* output, uint64_t device_size) {
+int do_select_output_location(char* output, uint64_t dev_size) {
 	
 	PRINT_STR("mount_devices\n");
 	mount_devices();
@@ -523,25 +560,29 @@ int do_select_output_location(char* output, uint64_t device_size) {
 	uint8_t save_network = is_connected();
 	PRINT_STR("save_network = %x\n", save_network);
 	
+	
 	uint64_t xmc_size = get_free_space("xmc0:");
 	uint64_t uma_size = get_free_space("uma0:");
 	uint64_t ux_size  = get_free_space("ux0:");
-	
+
 	uint8_t ux_exist = file_exist("ux0:");
 	uint8_t xmc_exist = file_exist("xmc0:");
 	uint8_t uma_exist = file_exist("uma0:");
+
 	uint8_t host_exist = file_exist("host0:");
 	
+
 	
-	PRINT_STR("device_size %llx\n", device_size);
+	
+	PRINT_STR("device_size %llx\n", dev_size);
 	PRINT_STR("xmc_size %llx\n", xmc_size);
 	PRINT_STR("uma_size %llx\n", uma_size);
 	PRINT_STR("ux_size %llx\n", ux_size);
 	
 	PROCESS_MENU(draw_select_output_location, output, 
-				(ux_exist  && ux_size >= device_size), 
-				(xmc_exist && xmc_size >= device_size), 
-				(uma_exist && uma_size >= device_size), 
+				(ux_exist  && ux_size >= dev_size), 
+				(xmc_exist && xmc_size >= dev_size), 
+				(uma_exist && uma_size >= dev_size), 
 				host_exist, 
 				save_network);
 	

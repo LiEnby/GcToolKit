@@ -11,8 +11,8 @@ f00dbridge:
       syscall: true
       functions:
         - ResetGc
-        - ClearFinalKeys
-        - GetFinalKeys
+        - ClearCartSecret
+        - GetCartSecret
         - GetLastCmd20Input
         - GetLastCmd20KeyId
         - HasCmd20Captured
@@ -25,3 +25,4 @@ f00dbridge:
         - FormatDevice
         - GetCardCsd
         - GetCardId
+        - GetCardExtCsd

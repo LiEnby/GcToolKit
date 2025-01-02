@@ -148,11 +148,11 @@ int ResetGc() {
 	return 0;
 }
 
-int ClearFinalKeys() {
+int ClearCartSecret() {
 	return ksceSblGcAuthMgrDrmBBClearCartSecret();
 }
 
-int GetFinalKeys(char* keys) {
+int GetCartSecret(char* keys) {
 	char k_keys[0x20];
 	memset(k_keys, 0x00, sizeof(k_keys));
 	

@@ -146,7 +146,6 @@ void handle_menu_set_output(char* fmt, int what) {
 			default:
 				return;
 		};
-		
 		break;
 	};
 	PRINT_STR("output_device %s\n", output_device);
@@ -186,8 +185,24 @@ void handle_menu_set_output(char* fmt, int what) {
 
 
 }
+
+int handle_format_confirm_and_format(const char* block_device) {
+	
+	int selected = do_format_confirm(block_device);
+	int full = 0;
+	int format = 1;
+	
+	if(selected == FULL_FORMAT) full = 1;
+	if(selected == QUICK_FORMAT) full = 0;
+	if(selected == OP_CANCELED || selected == CANCEL_FORMAT) return;
+	
+	int res = do_device_wipe_and_format(block_device, full, format);
+		
+	return res;
+}
+
 void handle_wipe_option(int what) {
-	char* block_device = NULL;
+	const char* block_device = NULL;
 	switch(what) {
 		case RESET_MEDIAID:
 			block_device = BLOCK_DEVICE_MEDIAID;
@@ -200,8 +215,14 @@ void handle_wipe_option(int what) {
 		default:
 			return;
 	}
-	int res = do_device_wipe(block_device, (what == RESET_GRW0) );
 		
+	int res = 0;
+	
+	if(what == RESET_GRW0) res = handle_format_confirm_and_format(block_device);
+	else if(what == RESET_MEDIAID) res = do_device_wipe_and_format(block_device, 1, 0);
+	
+	if(res == OP_CANCELED) return;
+	
 	char msg[0x1028];	
 	if(res < 0) {
 		do_error(res);
@@ -209,7 +230,8 @@ void handle_wipe_option(int what) {
 	else{
 		snprintf(msg, sizeof(msg), "Formatted: \"%s\" ...", block_device);
 		do_confirm_message("Format Success!", msg);
-	}
+	}	
+
 }
 
 void handle_select_file(int what, char* folder) {
@@ -290,8 +312,10 @@ void handle_select_input_device(int what) {
 		
 		break;
 	};
+	
 	// get infile
 	char input_folder[MAX_PATH];
+	
 	
 	snprintf(input_folder, sizeof(input_folder), "%sbak", input_device);
 	sceIoMkdir(input_folder, 0777);
@@ -333,8 +357,6 @@ void handle_menu_select_option() {
 				break;
 			case GET_GC_INFO:
 				break;
-			case SWAP_GC:
-				break;
 			default:
 				break;
 		};
@@ -349,7 +371,7 @@ void handle_menu_select_option() {
 		handle_select_input_device(selected);
 	if(selected == GET_GC_INFO)
 		do_device_info();
-	if(selected == OP_CANCELED || selected == SWAP_GC)
+	if(selected == OP_CANCELED)
 		do_gc_insert_prompt();
 }
 

@@ -6,12 +6,19 @@
 #include <vitasdk.h>
 
 #include "log.h"
+#include "crypto.h"
 #include "f00dbridge.h"
 #include "device.h"
+
 #include "mbr.h"
 #include "vci.h"
+#include "psv.h"
+
 #include "err.h"
 #include "net.h"
+
+#include "sha1.h"
+#include "sha256.h"
 
 #define DO_CHECKED(var, func, ...) \
 	int var = func(__VA_ARGS__); \
@@ -32,17 +39,41 @@
 		if(progress_callback != NULL) progress_callback(block_device, path, total, device_size); \
 	} while(total < device_size)
 
-#define CREATE_VCI_HDR(wr_func) \
+#define CREATE_VCI_HEADER(wr_func) \
 	if(keys != NULL) { \
 		VciHeader vci; \
 		memset(&vci, 0x00, sizeof(VciHeader)); \
 		\
-		memcpy(vci.magic, VCI_HDR, sizeof(vci.magic)); \
+		memcpy(vci.magic, VCI_MAGIC, sizeof(vci.magic)); \
 		vci.version = VCI_VER; \
 		vci.devicesize = device_size; \
 		memcpy(&vci.keys, keys, sizeof(GcCmd56Keys)); \
 		\
 		int wr = wr_func(wr_fd, &vci, sizeof(VciHeader)); \
+		PRINT_STR("wr = %x\n", wr); \
+		\
+		if(wr == 0) ERROR(-1); \
+		if(wr != sizeof(VciHeader)) ERROR(wr * -1); \
+		if(wr < 0) ERROR(wr); \
+	}
+
+#define CREATE_PSV_HEADER(wr_func) \
+	if(keys != NULL) { \
+		PsvHeader psv; \
+		memset(&psv, 0x00, sizeof(PsvHeader)); \
+		memcpy(psv.magic, PSV_MAGIC, sizeof(psv.magic)); \
+		\
+		psv.verison = PSV_VER; \
+		psv.flags = PSV_FLAGS; \
+		\
+		derive_cart_secret(keys, psv.cart_secret); \
+		derive_packet20_hash(keys, psv.packet20_sha1); \
+		memset(psv.all_sectors_sha256, 0xFF, sizeof(psv.all_sectors_sha256)); \
+		\
+		psv.image_size = device_size; \
+		psv.image_offset = sizeof(PsvHeader) / 0x200; \
+		\
+		int wr = wr_func(wr_fd, &vci, sizeof(PsvHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
 		if(wr == 0) ERROR(-1); \
@@ -57,53 +88,10 @@
 	if(device_size == 0) ERROR(-1); \
 	if(progress_callback != NULL) progress_callback(block_device, block_device, total, device_size)\
 	
-#define SAFE_CHK() if(memcmp(block_device, "sdstor0:gcd", 11) != 0) ERROR(-128)
+#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)
 
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
-
-char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
-	char* vendor = "Unknown";
-	switch(vendorId) {
-		case 0x00:
-			vendor = "Sandisk";
-			break;
-		case 0x02:
-			vendor = "Kingston or SanDisk";
-			break;
-		case 0x03:
-		case 0x11:
-			vendor = "Toshiba";
-			break;
-		case 0x13:
-			vendor = "Micron";
-			break;
-		case 0x15:
-			vendor = "Samsung or SanDisk or LG";
-			break;
-		case 0x37:
-			vendor = "KingMax";
-			break;
-		case 0x44:
-			vendor = "ATP";
-			break;
-		case 0x45:
-			vendor = "SanDisk Corporation";
-			break;
-		case 0x2c:
-		case 0x70:
-			vendor = "Kingston";
-			break;
-		case 0x90:
-			vendor = "Hynix";
-			break;
-		case 0xfe:
-			vendor = "Micron";
-			break;
-	}
-	
-	return vendor;
-}
 
 uint8_t device_exist(char* block_device) {
 	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
@@ -115,7 +103,7 @@ uint8_t device_exist(char* block_device) {
 	return 1;
 }
 
-uint64_t device_size(char* block_device) {
+uint64_t device_size(const char* block_device) {
 
 	uint64_t device_size = 0;
 
@@ -162,9 +150,9 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 	
 	// open socket
 	DO_CHECKED(wr_fd, begin_file_send, ip_address, port, path, (keys != NULL) ? device_size + sizeof(VciHeader) : device_size);
-	
+
 	// write vci header
-	CREATE_VCI_HDR(file_send_data);
+	CREATE_VCI_HEADER(file_send_data);
 
 	// enter read/write loop
 	DEVICE_ACCESS_LOOP(ReadDevice, file_send_data);
@@ -195,7 +183,7 @@ int dump_device(char* block_device, char* path, GcCmd56Keys* keys, void (*progre
 	CREATE_DEV_SZ(rd_fd);
 
 	// write vci header
-	CREATE_VCI_HDR(sceIoWrite);
+	CREATE_VCI_HEADER(sceIoWrite);
 
 	// enter read/write loop
 	DEVICE_ACCESS_LOOP(ReadDevice, sceIoWrite);
@@ -213,7 +201,7 @@ int restore_device(char* block_device, char* path, void (*progress_callback)(cha
 	int ret = 0;
 	uint64_t total = 0;
 	
-	SAFE_CHK();
+	SAFE_CHK(block_device);
 	PRINT_STR("Begining restore of %s to %s\n", path, block_device);
 	
 	// get image file size
@@ -249,7 +237,7 @@ int wipe_device(char* block_device, void (*progress_callback)(char*, char*, uint
 	int rd_fd = 0;
 	char* path = NULL;
 	
-	SAFE_CHK();
+	SAFE_CHK(block_device);
 	PRINT_STR("Begining wipe of %s\n", block_device);
 	
 	// open device

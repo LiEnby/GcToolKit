@@ -7,6 +7,9 @@
 #include <taihen.h>
 #include "mod.h"
 
+#define ERROR(x) return x
+#define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)
+	
 int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
 
 typedef struct SceFatFormatParam { // size is 0x30-bytes
@@ -115,8 +118,7 @@ int FormatDevice(char* device) {
 	static char k_device[1028];
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	
-	if(memcmp(k_device, "sdstor0:gcd", 11) != 0)
-		return -1;
+	SAFE_CHK(k_device);
 	
 	int res = FatfsExecFormat(k_device, 0x8000, SCE_FAT_FORMAT_TYPE_EXFAT);
 	EXIT_SYSCALL(state);
@@ -129,7 +131,6 @@ void get_module_functions() {
 	SceUID module_id;
 
 	module_id = ksceKernelSearchModuleByName("SceAppMgr");
-	
 	int appmgr_version = check_module_version("os0:/kd/bootimage.skprx");
 	
 	if(module_id > 0){

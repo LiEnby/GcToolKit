@@ -133,20 +133,27 @@ void wait_for_gc_auth() {
 		PRINT_STR("ResetGc = %x\n", res);			
 	}
 
-	while(!HasCmd20Captured()) { sceKernelDelayThread(1000); };
+	while(!HasCmd20Captured()) { /*wait*/ };
 }
 
-uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
-	char got_final_keys[0x20];
-	char expected_final_keys[0x20];
+void derive_packet20_hash(GcCmd56Keys* keys, uint8_t* packet20_hash) {
+	SHA1_CTX ctx;
 	
-	PRINT_STR("verifying packet18_key ...\n");
+	PRINT_STR("SHA1_INIT RUN\n");
+	sha1_init(&ctx);
 	
-	int res = GetFinalKeys(got_final_keys);
-	PRINT_STR("GetFinalKeys res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
-	if(res < 0) goto error;
+	PRINT_STR("SHA1_UPDATE RUN\n");
+	sha1_update(&ctx, keys->packet20_key, sizeof(keys->packet20_key));
 	
-	// final key should == sha256 of packet18_key+rif key
+	PRINT_STR("SHA256_FINAL RUN\n");
+	sha1_final(&ctx, packet20_hash);
+}
+
+void derive_cart_secret(GcCmd56Keys* keys, uint8_t* cart_secret) {
+	// final cart secret == sha256 of packet18_key+packet20_key
+	
+	PRINT_STR("derive_cart_secret %p %p", keys, cart_secret);
+	
 	SHA256_CTX ctx;
 	
 	PRINT_STR("SHA256_INIT RUN\n");
@@ -156,7 +163,21 @@ uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
 	sha256_update(&ctx, keys, sizeof(GcCmd56Keys));
 
 	PRINT_STR("SHA256_FINAL RUN\n");
-	sha256_final(&ctx, expected_final_keys);
+	sha256_final(&ctx, cart_secret);
+	
+}
+
+uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
+	char got_final_keys[0x20];
+	char expected_final_keys[0x20];
+	
+	PRINT_STR("verifying packet18_key ...\n");
+	
+	int res = GetCartSecret(got_final_keys);
+	PRINT_STR("GetCartSecret res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
+	if(res < 0) goto error;
+	
+	derive_cart_secret(keys, expected_final_keys);
 	
 	if(memcmp(got_final_keys, expected_final_keys, sizeof(expected_final_keys)) == 0) {
 		PRINT_STR("KEYS VERIFIED SUCCESS!\n");
@@ -173,16 +194,12 @@ error:
 	return 0;
 }
 
-uint8_t verify_rif_keys(GcCmd56Keys* keys) {
+uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	int ret = 0;
 	char expected_final_rif_hash[SHA1_BLOCK_SIZE];
 	char got_final_rif_hash[SHA1_BLOCK_SIZE];
 
-	SHA1_CTX ctx;
-	
-	sha1_init(&ctx);
-	sha1_update(&ctx, keys->packet20_key, sizeof(keys->packet20_key));
-	sha1_final(&ctx, expected_final_rif_hash);
+	derive_packet20_hash(keys, expected_final_rif_hash);
 	
 	// get title id from license folder
 	char folder[MAX_PATH];
@@ -231,7 +248,7 @@ uint8_t verify_rif_keys(GcCmd56Keys* keys) {
 		return 1;
 	}
 
-	PRINT_STR("verify_rif_keys failed!\n");
+	PRINT_STR("verify_packet20_key failed!\n");
 	
 	return 0;
 error:	
@@ -280,7 +297,7 @@ int extract_gc_keys(GcCmd56Keys* keys) {
 		
 		// verify rif buffer
 		if(file_exist("gro0:"))
-			if(!verify_rif_keys(keys)) return -2;
+			if(!verify_packet20_key(keys)) return -2;
 		
 		
 		return 0;

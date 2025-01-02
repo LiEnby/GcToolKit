@@ -2,8 +2,8 @@
 #define VCI_H
 #include <stdint.h>
 
-#define VCI_HDR "VCI\0"
-#define VCI_VER (1)
+#define VCI_MAGIC "VCI\0"
+#define VCI_VER (0x1)
 
 typedef struct GcCmd56Keys{
 	uint8_t packet20_key[0x20];

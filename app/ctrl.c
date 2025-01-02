@@ -3,6 +3,10 @@
 #include <sys/time.h>
 #include <string.h>
 
+#include "device.h"
+#include "io.h"
+
+
 int get_key() {
 	static unsigned buttons[] = {
 		SCE_CTRL_SELECT,
@@ -23,6 +27,10 @@ int get_key() {
 	SceCtrlData pad;
 	while (1) {
 		memset(&pad, 0, sizeof(pad));
+		
+		// this is a stupid hack, i hate this ...
+		if(!device_exist(BLOCK_DEVICE_GC)) return SCE_CTRL_CIRCLE; 
+		
 		sceCtrlPeekBufferPositive(0, &pad, 1);
 		unsigned newb = prev ^ (pad.buttons & prev);
 		prev = pad.buttons;

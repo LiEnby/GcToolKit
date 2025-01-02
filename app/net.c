@@ -52,7 +52,7 @@ void term_network() {
 uint8_t is_connected() {
 	if(!init) return 0;
 	int state = 0;
-	PRINT_STR("sceNetCtlInetGetState before call\n", state);
+	PRINT_STR("sceNetCtlInetGetState before call %x\n", state);
 	sceNetCtlInetGetState(&state);
 	PRINT_STR("state = %x\n", state);
 

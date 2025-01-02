@@ -8,7 +8,7 @@ int do_select_output_location(char* output, uint64_t device_size);
 int do_select_input_location();
 int do_select_file(char* folder, char* output, char* extension, uint64_t max_size);
 int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port);
-int do_device_wipe(char* block_device, uint8_t format);
+int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format);
 int do_device_restore(char* block_device, char* input_file);
 void do_confirm_message(char* title, char* msg);
 int do_network_options(char* ip_address, unsigned short port);
@@ -28,14 +28,19 @@ enum insert_menu_options {
 	DUMP_GRW0,
 	WRITE_GRW0,
 	RESET_GRW0,
-	GET_GC_INFO,
-	SWAP_GC
+	GET_GC_INFO
 };
 
 enum select_network_options {
 	CHANGE_IP,
 	CHANGE_PORT,
 	START_DUMP
+};
+
+enum select_format_options {
+	FULL_FORMAT,
+	QUICK_FORMAT,
+	CANCEL_FORMAT
 };
 
 enum select_input_options {

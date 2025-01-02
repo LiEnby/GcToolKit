@@ -46,6 +46,7 @@ add_executable(${PROJECT_NAME}
 	menu.c
 	ime.c
 	net.c
+	gc_ident.c
 	bgm.cpp
 )
 

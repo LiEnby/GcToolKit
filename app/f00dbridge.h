@@ -1,6 +1,6 @@
 int ResetGc();
-int ClearFinalKeys();
-int GetFinalKeys(char* keys);
+int ClearCartSecret();
+int GetCartSecret(char* keys);
 
 int HasCmd20Captured();
 int GetLastCmd20KeyId();
@@ -17,6 +17,7 @@ int FormatDevice(char* device);
 
 int GetCardId(int deviceIndex, void* cardId);
 int GetCardCsd(int deviceIndex, void* cardCsd);
+int GetCardExtCsd(int deviceIndex, void* cardExtCsd);
 
 typedef struct SceSblSmCommGcData {
     int always1;
