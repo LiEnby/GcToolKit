@@ -10,7 +10,8 @@
 static uint8_t disable_power = 0;
 
 // the kernel module "GcKernKit" will be attempted to start from the following locations:
-static const char load_locations[][] = { 
+// (attempted in the order their listed.)
+static const char** load_locations = { 
 	// memory card
 	"ux0:/patch",
 	"ux0:/app",
@@ -53,7 +54,7 @@ int kernel_started() {
 		
 }
 
-SceUID try_load(const char* install_path){
+int try_load(const char* install_path) {
 	char kplugin_path[0x800];
 	char titleid[12];
 	
@@ -66,22 +67,20 @@ SceUID try_load(const char* install_path){
 	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
 	PRINT_STR("%s(%s) = %x\n", __FUNCTION__, kplugin_path, uid);
 	
-	return uid;
+	return uid > 0;
 }
 
 void load_kernel_modules() {
 	
 	if(kernel_started() == 0) {
 		
-		// try load GcKernKit from anywhere it could be;
+		// try load GcKernKit from all load locations.
 		for(int i = 0; load_locations[i] != NULL; i++) {
-			SceUID uid = try_load(load_locations[i]);
-			if(uid > 0) break;
+			if(try_load(load_locations[i])) break;
 		}
 		
 		// restart this application
-		strncpy(kplugin_path, "app0:/eboot.bin", sizeof(kplugin_path));
-		sceAppMgrLoadExec(kplugin_path, NULL, NULL);
+		sceAppMgrLoadExec("app0:/eboot.bin", NULL, NULL);
 	}
 	
 }
@@ -138,13 +137,13 @@ void init_shell() {
 	sceShellUtilInitEvents(0);
 	sceShellUtilLock(
 		SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED
 	);
 }
 
 void term_shell() {
 	sceShellUtilUnlock(
 		SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED
 	);
 }
