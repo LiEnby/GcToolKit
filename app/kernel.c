@@ -9,6 +9,39 @@
 
 static uint8_t disable_power = 0;
 
+// the kernel module "GcKernKit" will be attempted to start from the following locations:
+static const char load_locations[][] = { 
+	// memory card
+	"ux0:/patch",
+	"ux0:/app",
+	
+	// game cartridge
+	"grw0:/patch",
+	"gro0:/app",
+
+	// devkit
+	"host0:/patch",
+	"host0:/app",
+	"sd0:/patch"
+	"sd0:/app",
+	
+	// homebrew
+	"ur0:/patch",
+	"ur0:/app",
+	"xmc0:/patch",
+	"xmc0:/app",
+	"imc0:/patch",			
+	"imc0:/app",
+	"uma0:/patch",
+	"uma0:/app",
+	
+	// system
+	"pd0:/app",
+	"vs0:/app",
+	
+	NULL
+};
+		
 int kernel_started() {
 	char buffer[0x8];
 	memset(buffer, 0x00, sizeof(buffer));
@@ -16,15 +49,12 @@ int kernel_started() {
 	SceUID uid = _vshKernelSearchModuleByName("GcKernKit", buffer);
 	PRINT_STR("_vshKernelSearchModuleByName = %x\n", uid);
 	
-	if(uid >= 0) // started already
-		return 1;
-	else
-		return 0; // module not yet running
+	return (uid > 0);
 		
 }
 
-SceUID try_load(char* format_path){
-	char kplugin_path[0x200];
+SceUID try_load(const char* install_path){
+	char kplugin_path[0x800];
 	char titleid[12];
 	
 	memset(titleid, 0x00, sizeof(titleid));
@@ -32,9 +62,9 @@ SceUID try_load(char* format_path){
 	
 	sceAppMgrAppParamGetString(0, 12, titleid , 256);
 
-	snprintf(kplugin_path, sizeof(kplugin_path), format_path, titleid);
+	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/kplugin.skprx", install_path, titleid);
 	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-	PRINT_STR("start %s = %x\n", kplugin_path, uid);
+	PRINT_STR("%s(%s) = %x\n", __FUNCTION__, kplugin_path, uid);
 	
 	return uid;
 }
@@ -44,14 +74,10 @@ void load_kernel_modules() {
 	if(kernel_started() == 0) {
 		
 		// try load GcKernKit from anywhere it could be;
-		SceUID           uid   =  try_load("ux0:/app/%s/kplugin.skprx");
-		if(uid < 0)      uid   =  try_load("ux0:/patch/%s/kplugin.skprx");
-		else if(uid < 0) uid   =  try_load("vs0:/app/%s/kplugin.skprx");
-		else if(uid < 0) uid   =  try_load("gro0:/app/%s/kplugin.skprx");
-		else if(uid < 0) uid   =  try_load("grw0:/patch/%s/kplugin.skprx");
-		else if(uid < 0) uid   =  try_load("pd0:/app/%s/kplugin.skprx");
-		else if(uid < 0) uid   =  try_load("host0:/app/%s/kplugin.skprx");
-		else if(uid < 0) return;
+		for(int i = 0; load_locations[i] != NULL; i++) {
+			SceUID uid = try_load(load_locations[i]);
+			if(uid > 0) break;
+		}
 		
 		// restart this application
 		strncpy(kplugin_path, "app0:/eboot.bin", sizeof(kplugin_path));

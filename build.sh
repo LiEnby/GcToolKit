@@ -6,7 +6,6 @@ mkdir build
 cd build
 cmake ..
 make install
-cp ./GcKernKit.h ../app/GcKernKit.h
 
 if [ $? -eq 1 ] 
 then
@@ -17,6 +16,7 @@ fi
 
 # Back to root
 cd ../..
+cp -v kern/GcKernKit.h app/GcKernKit.h
 
 # Build App
 cd app
