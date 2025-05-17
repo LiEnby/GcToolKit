@@ -151,7 +151,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	PRINT_STR("output_device %s\n", output_device);
 
 	// get outfile
-	char output_folder[MAX_PATH*3];
+	char output_folder[MAX_PATH*5];
 	
 	// create "device:bak" folder if not exist
 	if(selected != DUMP_LOCATION_NET) {
@@ -194,7 +194,7 @@ int handle_format_confirm_and_format(const char* block_device) {
 	
 	if(selected == FULL_FORMAT) full = 1;
 	if(selected == QUICK_FORMAT) full = 0;
-	if(selected == OP_CANCELED || selected == CANCEL_FORMAT) return;
+	if(selected == OP_CANCELED || selected == CANCEL_FORMAT) return OP_CANCELED;
 	
 	int res = do_device_wipe_and_format(block_device, full, format);
 		
@@ -267,7 +267,7 @@ void handle_select_file(int what, char* folder) {
 		return;
 	}
 	
-	char input_file[MAX_PATH];
+	char input_file[MAX_PATH*5];
 	snprintf(input_file, sizeof(input_file), "%s/%s", folder, file);
 	
 	int res = do_device_restore(block_device, input_file);

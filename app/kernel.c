@@ -11,7 +11,7 @@ static uint8_t disable_power = 0;
 
 // the kernel module "GcKernKit" will be attempted to start from the following locations:
 // (attempted in the order their listed.)
-static const char** load_locations = { 
+static const char* load_locations[] = { 
 	// memory card
 	"ux0:/patch",
 	"ux0:/app",
@@ -55,7 +55,7 @@ int kernel_started() {
 }
 
 int try_load(const char* install_path) {
-	char kplugin_path[0x800];
+	char kplugin_path[0x1028];
 	char titleid[12];
 	
 	memset(titleid, 0x00, sizeof(titleid));
@@ -116,7 +116,6 @@ error:
 
 
 void lock_shell() {
-	sceShellUtilInitEvents(0);
 	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |

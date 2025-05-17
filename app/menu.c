@@ -116,15 +116,15 @@ void term_menus() {
 	free_texture(insertgc_tex);	
 }
 
-void draw_wipe_progress(char* device, char* unused, uint64_t progress, uint64_t total) {
+void draw_wipe_progress(const char* device, char* unused, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Formatting", "Writing", device, device);
 }
 
-void draw_restore_progress(char* device, char* input_filename, uint64_t progress, uint64_t total) {
+void draw_restore_progress(const char* device, char* input_filename, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Restoring", "Reading", device, input_filename);
 }
 
-void draw_dump_progress(char* device, char* output_filename, uint64_t progress, uint64_t total) {
+void draw_dump_progress(const char* device, char* output_filename, uint64_t progress, uint64_t total) {
 	RESTORE_MENU("Backing up", "Writing", device, output_filename);
 }
 
@@ -330,8 +330,8 @@ void draw_device_info(GcInfo* info) {
 	char hex[0x100];
 	char msg[0x200];
 	
-	memset(hex, hex, sizeof(hex));
-	memset(msg, msg, sizeof(msg));
+	memset(hex, 0x00, sizeof(hex));
+	memset(msg, 0x00, sizeof(msg));
 	
 	TO_HEX(info->Cid, sizeof(info->Cid), hex);
 	snprintf(msg, sizeof(msg), "CID:%s", hex);
@@ -437,12 +437,12 @@ void do_confirm_message(char* title, char* msg) {
 }
 
 
-int do_format_confirm(char* block_device) {
+int do_format_confirm(const char* block_device) {
 	PROCESS_MENU(draw_format_confirm_menu, block_device);
 	return selected;
 }
 
-int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format) {
+int do_device_wipe_and_format(const char* block_device, uint8_t full, uint8_t format) {
 	lock_shell();
 	disable_power_off();
 
@@ -456,8 +456,6 @@ int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format) 
 	if(full) res = wipe_device(block_device, draw_wipe_progress);
 	if(!full) draw_wipe_progress(block_device, NULL, 1, 1);
 	if(format) res = kFormatDevice(block_device);
-	
-
 
 	mount_gro0();
 	mount_grw0();
@@ -469,7 +467,7 @@ int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format) 
 	return res;
 }
 
-int do_device_restore(char* block_device, char* input_file) {
+int do_device_restore(const char* block_device, char* input_file) {
 	lock_shell();
 	disable_power_off();
 	
@@ -488,20 +486,20 @@ int do_device_restore(char* block_device, char* input_file) {
 	return res;
 }
 
-int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
+int do_device_dump(const char* block_device, char* output_file, uint8_t vci, char* ip_address, unsigned short port) {
+	
+	lock_shell();
+	disable_power_off();
+	
+	umount_gro0();
+	umount_grw0();
+	mount_devices();
 	
 	GcCmd56Keys keys;
 	if(vci){
 		int res = extract_gc_keys(&keys);
 		if(res < 0) return res;
 	}
-	
-	lock_shell();
-	disable_power_off();
-
-	umount_gro0();
-	umount_grw0();
-	mount_devices();
 	
 	int res = -1;
 	

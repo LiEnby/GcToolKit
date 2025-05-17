@@ -112,7 +112,7 @@ int FatfsExecFormat(const char *s, SceSize bytePerCluster, SceUInt32 sce_fs_type
 }
 
 
-int kFormatDevice(char* device) {
+int kFormatDevice(const char* device) {
 	int state = 0;
 	ENTER_SYSCALL(state);
 	static char k_device[1028];

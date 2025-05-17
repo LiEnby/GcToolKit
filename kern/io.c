@@ -4,7 +4,7 @@
 #include <vitasdkkern.h>
 
 
-int k_open_device(char* device, int permission) {
+int k_open_device(const char* device, int permission) {
 	int prev = ksceKernelSetPermission(0x80);
 	int fd = ksceIoOpen(device, permission, 0777);
 	ksceKernelSetPermission(prev);
@@ -43,12 +43,12 @@ uint64_t k_get_device_size(int device_handle) {
 
 // io syscalls
 
-int kOpenDevice(char* device, int permission) {
+int kOpenDevice(const char* device, int permission) {
 	static char k_device[1028];
 	
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
 	
-	return k_open_device(k_device, permission);
+	return k_open_device((const char*)k_device, permission);
 }
 
 

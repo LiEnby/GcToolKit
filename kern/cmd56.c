@@ -6,6 +6,9 @@
 #include "log.h"
 #include "mod.h"
 
+// from taihen module.h
+int module_get_offset(SceUID pid, SceUID modid, int segidx, size_t offset, uintptr_t *addr);
+
 // static variables
 static uint8_t LAST_CAPTURED_CMD20_INPUT[0x116];
 static uint32_t LAST_CAPTURED_CMD20_KEYID = 0;
@@ -99,7 +102,7 @@ int kResetCmd20Input() {
 	return 0;
 }
 
-int kGetLastCmd20Input(char* cmd20_input) {
+int kGetLastCmd20Input(void* cmd20_input) {
 	ksceKernelMemcpyKernelToUser(cmd20_input, (const void*)LAST_CAPTURED_CMD20_INPUT, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	return 0;
 }
@@ -149,14 +152,14 @@ int kResetGc() {
 }
 
 int kClearCartSecret() {
-	return ksceSblGcAuthMgrDrmBBkClearCartSecret();
+	return ksceSblGcAuthMgrDrmBBClearCartSecret();
 }
 
-int kGetCartSecret(char* keys) {
-	char k_keys[0x20];
+int kGetCartSecret(uint8_t* keys) {
+	uint8_t k_keys[0x20];
 	memset(k_keys, 0x00, sizeof(k_keys));
 	
-	int res = ksceSblGcAuthMgrDrmBBkGetCartSecret(k_keys);
+	int res = ksceSblGcAuthMgrDrmBBGetCartSecret(k_keys);
 	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
 		
 	return res;

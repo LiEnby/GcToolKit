@@ -205,7 +205,6 @@ uint64_t get_file_size(const char* filepath) {
 }
 
 uint64_t get_free_space(const char* device) {
-	uint64_t max_size = 0;
 	uint64_t free_space = 0;
 	 
 	// host0 will always report as 0 bytes free
@@ -216,9 +215,7 @@ uint64_t get_free_space(const char* device) {
 	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));
 	if (res < 0) {
 		free_space = 0;
-		max_size = 0;
 	} else {
-		max_size = info.max_size;
 		free_space = info.free_size;
 	}
 	

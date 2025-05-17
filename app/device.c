@@ -86,14 +86,14 @@
 	kGetDeviceSize(dev_fd, &device_size); \
 	PRINT_STR("device_size = %llx\n", device_size); \
 	if(device_size == 0) ERROR(-1); \
-	if(progress_callback != NULL) progress_callback(block_device, block_device, total, device_size)\
+	if(progress_callback != NULL) progress_callback("", "", total, device_size)\
 	
 #define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)
 
 // exfatfs does each 0x20000 reading internally - Princess of Sleeping 
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
-uint8_t device_exist(char* block_device) {
+uint8_t device_exist(const char* block_device) {
 	int dfd = kOpenDevice(block_device, SCE_O_RDONLY);
 	
 	if(dfd < 0)
@@ -136,7 +136,7 @@ int read_data_from_image(SceUID fd, char* data, int size) {
 	return size;
 }
 
-int dump_device_network(char* ip_address, unsigned short port, char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int dump_device_network(char* ip_address, unsigned short port, const char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;	
 	uint64_t total = 0;
 	
@@ -167,7 +167,7 @@ error:
 }
 
 
-int dump_device(char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int dump_device(const char* block_device, char* path, GcCmd56Keys* keys, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
 	uint64_t total = 0;
 
@@ -197,7 +197,7 @@ error:
 	return ret;
 }
 
-int restore_device(char* block_device, char* path, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int restore_device(const char* block_device, char* path, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
 	uint64_t total = 0;
 	
@@ -230,7 +230,7 @@ error:
 	return ret;
 }
 
-int wipe_device(char* block_device, void (*progress_callback)(char*, char*, uint64_t, uint64_t)) {
+int wipe_device(const char* block_device, void (*progress_callback)(const char*, char*, uint64_t, uint64_t)) {
 	int ret = 0;
 	uint64_t total = 0;
 	

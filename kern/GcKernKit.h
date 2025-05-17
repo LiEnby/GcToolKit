@@ -1,19 +1,19 @@
 int kResetGc();
 int kClearCartSecret();
-int kGetCartSecret(char* keys);
+int kGetCartSecret(uint8_t* keys);
 
 int kHasCmd20Captured();
 int kGetLastCmd20KeyId();
-int kGetLastCmd20Input(char* cmd20_input);
+int kGetLastCmd20Input(void* cmd20_input);
 int kResetCmd20Input();
 
-int kOpenDevice(char* device, int permission);
+int kOpenDevice(const char* device, int permission);
 int kReadDevice(int device_handle, uint8_t* data, int size);
 int kWriteDevice(int device_handle, uint8_t* data, int size);
 int kCloseDevice(int device_handle);
 void kGetDeviceSize(int device_handle, uint64_t* device_size);
 
-int kFormatDevice(char* device);
+int kFormatDevice(const char* device);
 
 int kGetCardId(int deviceIndex, void* cardId);
 int kGetCardCsd(int deviceIndex, void* cardCsd);

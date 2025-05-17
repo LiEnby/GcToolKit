@@ -12,19 +12,6 @@ typedef struct sd_context_part_base {
    uint8_t CSD[0x10]; // this is CSD data but in reverse
 } sd_context_part_base;
 
-typedef enum SceSdifDevice {
-	SCE_SDIF_DEVICE_EMMC = 0,
-	SCE_SDIF_DEVICE_GC   = 1,
-	SCE_SDIF_DEVICE_SDIO = 2,
-	SCE_SDIF_DEVICE_USD  = 3,
-} SceSdifDevice;
-
-typedef enum SceSdifDeviceType {
-	SCE_SDIF_DEVICE_TYPE_INVALID = 0,
-	SCE_SDIF_DEVICE_TYPE_MMC     = 1,
-	SCE_SDIF_DEVICE_TYPE_SD      = 2,
-	SCE_SDIF_DEVICE_TYPE_SDIO    = 3,
-} SceSdifDeviceType;
 
 typedef struct cmd_info {
    uint32_t state_flags;

@@ -102,8 +102,6 @@ static uint8_t multiply(uint8_t a, uint8_t b);
 static void key_expansion_core(uint8_t *word, int iteration);
 static void rotate(uint8_t *word);
 
-//for debugging
-static void print_hex(uint8_t *ptr, int len);
 
 void AES_encrypt(aes_ctx_t *ctx, uint8_t *in, uint8_t *out)
 {
@@ -202,8 +200,6 @@ aes_ctx_t * AES_ctx_alloc(uint8_t *key, size_t keylen)
         ctx->keylen = keylen;
         memcpy(ctx->roundkey, key, keylen);
         key_expansion(ctx, keylen, round_key_size);
-        // printf("expanded key:\n");
-        // print_hex(ctx->roundkey, round_key_size);
     }
     return ctx;
 }
@@ -365,8 +361,6 @@ static void inv_mix_columns(aes_ctx_t *ctx)
 static void add_roundkey(aes_ctx_t *ctx, int current_round)
 {
     int i, j;
-    // printf("%d round key:\n", current_round);
-    // print_hex(ctx->roundkey + (current_round * AES_BLOCKSIZE), AES_BLOCKSIZE);
 
     for(i = 0; i < 4; i++)
         for(j = 0; j < 4; j++)
@@ -391,18 +385,6 @@ static uint8_t multiply(uint8_t a, uint8_t b) {
       d = xtime(d);
    }
    return c;
-}
-
-static void print_hex(uint8_t *ptr, int len)
-{
-    int i;
-    for(i = 0; i < len; i++)
-    {
-        if (i % 16 == 0 && i > 0)
-            printf("\n");
-        printf("%2.2x ", ptr[i]);
-    }
-    printf("\n");
 }
 
 unsigned long AES_CBC_encrypt(uint8_t* input, uint8_t* output, unsigned long length, uint8_t* key, size_t keylen, uint8_t* iv)

@@ -105,7 +105,7 @@ int key_dump(char* output_file) {
 
 
 void decrypt_packet18_key(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* packet18_key) {
-	char wbuf[0x30];
+	uint8_t wbuf[0x30];
 	
 	AES_CBC_decrypt(packet18+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 	
@@ -113,7 +113,7 @@ void decrypt_packet18_key(uint8_t* secondaryKey0, uint8_t* packet18, uint8_t* pa
 }
 
 void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* packet20_key) {
-	char wbuf[0x40];
+	uint8_t wbuf[0x40];
 	
 	AES_CBC_decrypt(packet20+3, wbuf, sizeof(wbuf), secondaryKey0, 0x10, ZERO_IV);
 
@@ -160,7 +160,7 @@ void derive_cart_secret(GcCmd56Keys* keys, uint8_t* cart_secret) {
 	sha256_init(&ctx);
 
 	PRINT_STR("SHA256_UPDATE RUN\n");
-	sha256_update(&ctx, keys, sizeof(GcCmd56Keys));
+	sha256_update(&ctx, (uint8_t*)keys, sizeof(GcCmd56Keys));
 
 	PRINT_STR("SHA256_FINAL RUN\n");
 	sha256_final(&ctx, cart_secret);
@@ -168,8 +168,8 @@ void derive_cart_secret(GcCmd56Keys* keys, uint8_t* cart_secret) {
 }
 
 uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
-	char got_final_keys[0x20];
-	char expected_final_keys[0x20];
+	uint8_t got_final_keys[0x20];
+	uint8_t expected_final_keys[0x20];
 	
 	PRINT_STR("verifying packet18_key ...\n");
 	
@@ -195,9 +195,8 @@ error:
 }
 
 uint8_t verify_packet20_key(GcCmd56Keys* keys) {
-	int ret = 0;
-	char expected_final_rif_hash[SHA1_BLOCK_SIZE];
-	char got_final_rif_hash[SHA1_BLOCK_SIZE];
+	uint8_t expected_final_rif_hash[SHA1_BLOCK_SIZE];
+	uint8_t got_final_rif_hash[SHA1_BLOCK_SIZE];
 
 	derive_packet20_hash(keys, expected_final_rif_hash);
 	
@@ -207,9 +206,9 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	PRINT_STR("folder = %s\n", folder);
 	
 	char TITLE_ID[12];
-	int res = read_first_filename(folder, TITLE_ID, sizeof(TITLE_ID));
-	PRINT_STR("read_first_filename license folder res = 0x%x\n",res);
-	if(res < 0) ERROR(-1);
+	int ret = read_first_filename(folder, TITLE_ID, sizeof(TITLE_ID));
+	PRINT_STR("read_first_filename license folder ret = 0x%x\n", ret);
+	if(ret < 0) ERROR(-1);
 
 	PRINT_STR("TITLE_ID = %s\n", TITLE_ID);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", TITLE_ID);
@@ -217,9 +216,9 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	
 	// get rif name from license/titleid folder
 	char RIF_NAME[0x50];
-	res = read_first_filename(folder, RIF_NAME, sizeof(RIF_NAME));
-	PRINT_STR("read_first_filename license titleid folder res = 0x%x\n",res);
-	if(res < 0) ERROR(-2);
+	ret = read_first_filename(folder, RIF_NAME, sizeof(RIF_NAME));
+	PRINT_STR("read_first_filename license titleid folder ret = 0x%x\n",ret);
+	if(ret < 0) ERROR(-2);
 	
 	PRINT_STR("RIF_NAME = %s\n", RIF_NAME);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s/%s", TITLE_ID, RIF_NAME);
@@ -232,17 +231,17 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	PRINT_STR("rif fd = %x\n", fd);
 	if(fd < 0) ERROR(-3);
 	
+	// final rif hash should == 0xE0 in rif file
 	uint64_t loc = sceIoLseek(fd, 0xE0, SCE_SEEK_SET);
 	PRINT_STR("sceIoLseek loc = %llx\n", loc);
 	if(loc != 0xE0) ERROR(-4);
 	
-	res = sceIoRead(fd, got_final_rif_hash, SHA1_BLOCK_SIZE);
-	PRINT_STR("sceIoRead res = %x\n", res);
-	if(res != SHA1_BLOCK_SIZE) ERROR(-5);
+	ret = sceIoRead(fd, got_final_rif_hash, SHA1_BLOCK_SIZE);
+	PRINT_STR("sceIoRead ret = %x\n", ret);
+	if(ret != SHA1_BLOCK_SIZE) ERROR(-5);
 	
 	sceIoClose(fd);
 	
-	// final rif hash should == 0xe0 in rif file
 	
 	if(memcmp(expected_final_rif_hash, got_final_rif_hash, SHA1_BLOCK_SIZE) == 0){
 		return 1;
