@@ -210,7 +210,7 @@ uint64_t get_free_space(const char* device) {
 	 
 	// host0 will always report as 0 bytes free
 	if(strcmp("host0:", device) == 0)
-		return 0xFFFFFFFFFFFFFFFF;
+		return 0xFFFFFFFFFFFFFFFFull;
 	 
 	SceIoDevInfo info;
 	int res = sceIoDevctl(device, 0x3001, NULL, 0, &info, sizeof(SceIoDevInfo));

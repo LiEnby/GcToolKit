@@ -12,7 +12,7 @@
 #include "io.h"
 #include "device.h"
 
-#include "f00dbridge.h"
+#include "GcKernKit.h"
 #include "crypto.h"
 #include "net.h"
 #include "err.h"
@@ -122,18 +122,18 @@ void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* pa
 }
 
 void wait_for_gc_auth() {
-	int res = ResetCmd20Input();
-	PRINT_STR("ResetCmd20Input = %x\n", res);
+	int res = kResetCmd20Input();
+	PRINT_STR("kResetCmd20Input = %x\n", res);
 
 	// check if there is already a GC inserted, if there is 
 	// reset the gc device to capture authentication step
 	// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
 	if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
-		res = ResetGc();
-		PRINT_STR("ResetGc = %x\n", res);			
+		res = kResetGc();
+		PRINT_STR("kResetGc = %x\n", res);			
 	}
 
-	while(!HasCmd20Captured()) { /*wait*/ };
+	while(!kHasCmd20Captured()) { /*wait*/ };
 }
 
 void derive_packet20_hash(GcCmd56Keys* keys, uint8_t* packet20_hash) {
@@ -173,8 +173,8 @@ uint8_t verify_cmd56_keys(GcCmd56Keys* keys) {
 	
 	PRINT_STR("verifying packet18_key ...\n");
 	
-	int res = GetCartSecret(got_final_keys);
-	PRINT_STR("GetCartSecret res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
+	int res = kGetCartSecret(got_final_keys);
+	PRINT_STR("kGetCartSecret res = 0x%X, got_final_keys = %p, expected_final_keys = %p, keys = %p\n", res, got_final_keys, expected_final_keys, keys);
 	if(res < 0) goto error;
 	
 	derive_cart_secret(keys, expected_final_keys);
@@ -259,12 +259,12 @@ error:
 }
 
 int extract_gc_keys(GcCmd56Keys* keys) {
-	if(HasCmd20Captured()) {
+	if(kHasCmd20Captured()) {
 		// get captured cmd56 authentication data
 		CommsData cmdData;
-		GetLastCmd20Input(&cmdData);
+		kGetLastCmd20Input(&cmdData);
 		
-		int keyId = GetLastCmd20KeyId();
+		int keyId = kGetLastCmd20KeyId();
 		PRINT_STR("keyId = %x\n", keyId);
 		
 		uint8_t masterKey[0x10];

@@ -1,5 +1,5 @@
 #include "gc_ident.h"
-#include "f00dbridge.h"
+#include "GcKernKit.h"
 #include "crypto.h"
 
 #include "log.h"
@@ -69,9 +69,9 @@ void mmc_datetime_from_byte(uint8_t rev, uint8_t mdt, uint16_t* year, uint16_t* 
 void get_gc_info(GcInfo* info) {
 	memset(info, 0, sizeof(GcInfo));
 	
-	GetCardId(1, info->Cid);
-	GetCardCsd(1, info->Csd);
-	GetCardExtCsd(1, info->ExtCsd);
+	kGetCardId(1, info->Cid);
+	kGetCardCsd(1, info->Csd);
+	kGetCardExtCsd(1, info->ExtCsd);
 	
 	PRINT_STR("Cid: ");
 	PRINT_BUFFER(info->Cid);
@@ -103,8 +103,8 @@ void get_gc_info(GcInfo* info) {
 	
 	mmc_datetime_from_byte(info->ExtCsdRev, mdt, &info->Year, &info->Month);
 	
-	if(HasCmd20Captured()) {
-		info->KeyId = GetLastCmd20KeyId();
+	if(kHasCmd20Captured()) {
+		info->KeyId = kGetLastCmd20KeyId();
 		extract_gc_keys(&info->KeySet);
 	}
 }

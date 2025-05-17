@@ -6,7 +6,7 @@
 #include "gameinfo.h"
 #include "io.h"
 #include "net.h"
-#include "f00dbridge.h"
+#include "GcKernKit.h"
 #include "gc_ident.h"
 #include "kernel.h"
 #include "log.h"
@@ -443,51 +443,48 @@ int do_format_confirm(char* block_device) {
 }
 
 int do_device_wipe_and_format(char* block_device, uint8_t full, uint8_t format) {
-	umount_gro0();
-	umount_grw0();
-	
+	lock_shell();
 	disable_power_off();
 
+	umount_gro0();
+	umount_grw0();
 	mount_devices();
 	
-	lock_shell();
 	
 	int res = 0;
 	
 	if(full) res = wipe_device(block_device, draw_wipe_progress);
 	if(!full) draw_wipe_progress(block_device, NULL, 1, 1);
-	if(format) res = FormatDevice(block_device);
+	if(format) res = kFormatDevice(block_device);
 	
-	unlock_shell();
 
-	enable_power_off();
 
 	mount_gro0();
 	mount_grw0();
-	
 	umount_devices();
+	
+	unlock_shell();
+	enable_power_off();
+	
 	return res;
 }
 
 int do_device_restore(char* block_device, char* input_file) {
+	lock_shell();
+	disable_power_off();
 	
 	umount_gro0();
 	umount_grw0();
-	
-	disable_power_off();
-
 	mount_devices();
 	
-	lock_shell();
 	int res = restore_device(block_device, input_file, draw_restore_progress);
-	unlock_shell();
-
-	enable_power_off();
 
 	mount_gro0();
 	mount_grw0();
-	
 	umount_devices();
+
+	unlock_shell();
+	enable_power_off();
 	return res;
 }
 
@@ -499,29 +496,28 @@ int do_device_dump(char* block_device, char* output_file, uint8_t vci, char* ip_
 		if(res < 0) return res;
 	}
 	
-	umount_gro0();
-	umount_grw0();
-	
+	lock_shell();
 	disable_power_off();
 
+	umount_gro0();
+	umount_grw0();
 	mount_devices();
 	
-	lock_shell();
 	int res = -1;
 	
 	if(ip_address == NULL)
 		res = dump_device(block_device, output_file, vci ? &keys : NULL, draw_dump_progress);
 	else
 		res = dump_device_network(ip_address, port, block_device, output_file, vci ? &keys : NULL, draw_dump_progress);
-	
-	unlock_shell();
 
-	enable_power_off();
 
 	mount_gro0();
 	mount_grw0();
-	
 	umount_devices();
+	
+	unlock_shell();
+	enable_power_off();
+
 	return res;
 }
 
@@ -570,10 +566,7 @@ int do_select_output_location(char* output, uint64_t dev_size) {
 	uint8_t uma_exist = file_exist("uma0:");
 
 	uint8_t host_exist = file_exist("host0:");
-	
 
-	
-	
 	PRINT_STR("device_size %llx\n", dev_size);
 	PRINT_STR("xmc_size %llx\n", xmc_size);
 	PRINT_STR("uma_size %llx\n", uma_size);

@@ -52,7 +52,7 @@ add_executable(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
 	vita2d
-	f00dbridge_stub
+	GcKernKit_stub
 	taihen_stub
 
 	SceSysmodule_stub

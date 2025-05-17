@@ -4,7 +4,7 @@
 #include "gc.h"
 #include "log.h"
 
-int GetCardId(int deviceIndex, void* cardId) {
+int kGetCardId(int deviceIndex, void* cardId) {
 	sd_context_part_mmc* k_deviceInfo = ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return -1;
 
@@ -21,7 +21,7 @@ int GetCardId(int deviceIndex, void* cardId) {
 	return 0;
 }
 
-int GetCardCsd(int deviceIndex, void* cardCsd) {
+int kGetCardCsd(int deviceIndex, void* cardCsd) {
 	sd_context_part_mmc* k_deviceInfo = ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return -1;
 	
@@ -38,7 +38,7 @@ int GetCardCsd(int deviceIndex, void* cardCsd) {
 	return 0;
 }
 
-int GetCardExtCsd(int deviceIndex, void* cardExtCsd) {
+int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
 	sd_context_part_mmc* k_deviceInfo = ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
 	if(k_deviceInfo == NULL) return -1;
 	

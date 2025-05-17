@@ -92,27 +92,27 @@ void cmd56_unpatch() {
 
 // user syscalls
 
-int ResetCmd20Input() {
+int kResetCmd20Input() {
 	// remove the flag saying we have captured one so another GC can have data captured.
 	memset(LAST_CAPTURED_CMD20_INPUT, 0x00, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	HAS_CAPTURED_CMD20 = 0;
 	return 0;
 }
 
-int GetLastCmd20Input(char* cmd20_input) {
+int kGetLastCmd20Input(char* cmd20_input) {
 	ksceKernelMemcpyKernelToUser(cmd20_input, (const void*)LAST_CAPTURED_CMD20_INPUT, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	return 0;
 }
 
-int GetLastCmd20KeyId() {
+int kGetLastCmd20KeyId() {
 	return LAST_CAPTURED_CMD20_KEYID;
 }
 
-int HasCmd20Captured() {
+int kHasCmd20Captured() {
 	return HAS_CAPTURED_CMD20;
 }
 
-int ResetGc() {
+int kResetGc() {
 	// spent ages trying to find a way to run gc authentication again when already inserted
 	// then i had a thought ???
 	// have you tried turning it off and on again ????
@@ -148,15 +148,15 @@ int ResetGc() {
 	return 0;
 }
 
-int ClearCartSecret() {
-	return ksceSblGcAuthMgrDrmBBClearCartSecret();
+int kClearCartSecret() {
+	return ksceSblGcAuthMgrDrmBBkClearCartSecret();
 }
 
-int GetCartSecret(char* keys) {
+int kGetCartSecret(char* keys) {
 	char k_keys[0x20];
 	memset(k_keys, 0x00, sizeof(k_keys));
 	
-	int res = ksceSblGcAuthMgrDrmBBGetCartSecret(k_keys);
+	int res = ksceSblGcAuthMgrDrmBBkGetCartSecret(k_keys);
 	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
 		
 	return res;

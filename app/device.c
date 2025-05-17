@@ -7,7 +7,7 @@
 
 #include "log.h"
 #include "crypto.h"
-#include "f00dbridge.h"
+#include "GcKernKit.h"
 #include "device.h"
 
 #include "mbr.h"
@@ -83,7 +83,7 @@
 
 #define CREATE_DEV_SZ(dev_fd) \
 	uint64_t device_size = 0; \
-	GetDeviceSize(dev_fd, &device_size); \
+	kGetDeviceSize(dev_fd, &device_size); \
 	PRINT_STR("device_size = %llx\n", device_size); \
 	if(device_size == 0) ERROR(-1); \
 	if(progress_callback != NULL) progress_callback(block_device, block_device, total, device_size)\
@@ -94,12 +94,12 @@
 static uint8_t DEVICE_DUMP_BUFFER[0x20000]__attribute__((aligned(0x40))); 
 
 uint8_t device_exist(char* block_device) {
-	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
+	int dfd = kOpenDevice(block_device, SCE_O_RDONLY);
 	
 	if(dfd < 0)
 		return 0;
 	
-	CloseDevice(dfd);
+	kCloseDevice(dfd);
 	return 1;
 }
 
@@ -107,12 +107,12 @@ uint64_t device_size(const char* block_device) {
 
 	uint64_t device_size = 0;
 
-	int dfd = OpenDevice(block_device, SCE_O_RDONLY);
+	int dfd = kOpenDevice(block_device, SCE_O_RDONLY);
 	if(dfd < 0)
 		return 0;
 	
-	GetDeviceSize(dfd, &device_size);
-	CloseDevice(dfd);
+	kGetDeviceSize(dfd, &device_size);
+	kCloseDevice(dfd);
 	
 	return device_size;
 }
@@ -143,7 +143,7 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 	PRINT_STR("Begining NETWORK dump of %s to %s:%u\n", block_device, ip_address, port);
 	
 	// open device
-	DO_CHECKED(rd_fd, OpenDevice, block_device, SCE_O_RDONLY);
+	DO_CHECKED(rd_fd, kOpenDevice, block_device, SCE_O_RDONLY);
 
 	// get device size
 	CREATE_DEV_SZ(rd_fd);
@@ -155,13 +155,13 @@ int dump_device_network(char* ip_address, unsigned short port, char* block_devic
 	CREATE_VCI_HEADER(file_send_data);
 
 	// enter read/write loop
-	DEVICE_ACCESS_LOOP(ReadDevice, file_send_data);
+	DEVICE_ACCESS_LOOP(kReadDevice, file_send_data);
 	
 error:
 	if(wr_fd >= 0)
 		end_file_send(wr_fd);
 	if(rd_fd >= 0)
-		CloseDevice(rd_fd);
+		kCloseDevice(rd_fd);
 	
 	return ret;
 }
@@ -174,7 +174,7 @@ int dump_device(char* block_device, char* path, GcCmd56Keys* keys, void (*progre
 	PRINT_STR("Begining dump of %s to %s\n", block_device, path);
 	
 	// open device
-	DO_CHECKED(rd_fd, OpenDevice, block_device, SCE_O_RDONLY);
+	DO_CHECKED(rd_fd, kOpenDevice, block_device, SCE_O_RDONLY);
 	
 	// open image file
 	DO_CHECKED(wr_fd, sceIoOpen, path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
@@ -186,13 +186,13 @@ int dump_device(char* block_device, char* path, GcCmd56Keys* keys, void (*progre
 	CREATE_VCI_HEADER(sceIoWrite);
 
 	// enter read/write loop
-	DEVICE_ACCESS_LOOP(ReadDevice, sceIoWrite);
+	DEVICE_ACCESS_LOOP(kReadDevice, sceIoWrite);
 	
 error:
 	if(wr_fd >= 0)
 		sceIoClose(wr_fd);
 	if(rd_fd >= 0)
-		CloseDevice(rd_fd);
+		kCloseDevice(rd_fd);
 	
 	return ret;
 }
@@ -212,20 +212,20 @@ int restore_device(char* block_device, char* path, void (*progress_callback)(cha
 	DO_CHECKED(rd_fd, sceIoOpen, path, SCE_O_RDONLY, 0777);
 
 	// open device
-	DO_CHECKED(wr_fd, OpenDevice, block_device, SCE_O_WRONLY);
+	DO_CHECKED(wr_fd, kOpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
 	CREATE_DEV_SZ(wr_fd);
 	if(img_file_sz > device_size) ERROR(-2);
 	
 	// enter read/write loop
-	DEVICE_ACCESS_LOOP(read_data_from_image, WriteDevice);
+	DEVICE_ACCESS_LOOP(read_data_from_image, kWriteDevice);
 	
 error:
 	if(rd_fd >= 0)
 		sceIoClose(rd_fd);
 	if(wr_fd >= 0)
-		CloseDevice(wr_fd);
+		kCloseDevice(wr_fd);
 	
 	return ret;
 }
@@ -241,17 +241,17 @@ int wipe_device(char* block_device, void (*progress_callback)(char*, char*, uint
 	PRINT_STR("Begining wipe of %s\n", block_device);
 	
 	// open device
-	DO_CHECKED(wr_fd, OpenDevice, block_device, SCE_O_WRONLY);
+	DO_CHECKED(wr_fd, kOpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
 	CREATE_DEV_SZ(wr_fd);
 	
 	// enter read/write loop
-	DEVICE_ACCESS_LOOP(read_null, WriteDevice);
+	DEVICE_ACCESS_LOOP(read_null, kWriteDevice);
 	
 error:
 	if(wr_fd >= 0)
-		CloseDevice(wr_fd);
+		kCloseDevice(wr_fd);
 	
 	return ret;
 }

@@ -43,7 +43,7 @@ uint64_t k_get_device_size(int device_handle) {
 
 // io syscalls
 
-int OpenDevice(char* device, int permission) {
+int kOpenDevice(char* device, int permission) {
 	static char k_device[1028];
 	
 	ksceKernelStrncpyUserToKernel(k_device, (const void*)device, sizeof(k_device));
@@ -52,12 +52,12 @@ int OpenDevice(char* device, int permission) {
 }
 
 
-int WriteDevice(int device_handle, uint8_t* data, int size) {
+int kWriteDevice(int device_handle, uint8_t* data, int size) {
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
 	
-	int uid = ksceKernelUserMap("F00DBRIDGE_WRITE", 3, data, size, &k_data, &k_size, &k_offset);
+	int uid = ksceKernelUserMap("GcKernKit_WRITE", 3, data, size, &k_data, &k_size, &k_offset);
 	if(uid < 0)
 		return uid;
 	int res = k_write_device(device_handle, (k_data + k_offset) , size);
@@ -67,12 +67,12 @@ int WriteDevice(int device_handle, uint8_t* data, int size) {
 }
 
 
-int ReadDevice(int device_handle, uint8_t* data, int size) {
+int kReadDevice(int device_handle, uint8_t* data, int size) {
 	void* k_data = NULL;
 	size_t k_size = 0;
 	uint32_t k_offset = 0;
 	
-	int uid = ksceKernelUserMap("F00DBRIDGE_READ", 3, data, size, &k_data, &k_size, &k_offset);
+	int uid = ksceKernelUserMap("GcKernKit_READ", 3, data, size, &k_data, &k_size, &k_offset);
 	if(uid < 0)
 		return uid;
 	int res = k_read_device(device_handle, (k_data + k_offset) , size);
@@ -81,11 +81,11 @@ int ReadDevice(int device_handle, uint8_t* data, int size) {
 	return res;
 }
 
-int CloseDevice(int device_handle) {
+int kCloseDevice(int device_handle) {
 	return k_close_device(device_handle);
 }
 
-void GetDeviceSize(int device_handle, uint64_t* device_size) {
+void kGetDeviceSize(int device_handle, uint64_t* device_size) {
 	uint64_t k_device_size = k_get_device_size(device_handle);
 	ksceKernelMemcpyKernelToUser(device_size, (const void*)&k_device_size, sizeof(uint64_t));
 }

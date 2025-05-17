@@ -6,6 +6,7 @@ mkdir build
 cd build
 cmake ..
 make install
+cp ./GcKernKit.h ../app/GcKernKit.h
 
 if [ $? -eq 1 ] 
 then

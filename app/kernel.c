@@ -13,9 +13,8 @@ int kernel_started() {
 	char buffer[0x8];
 	memset(buffer, 0x00, sizeof(buffer));
 	
-	SceUID uid = _vshKernelSearchModuleByName("f00dbridge", buffer);
+	SceUID uid = _vshKernelSearchModuleByName("GcKernKit", buffer);
 	PRINT_STR("_vshKernelSearchModuleByName = %x\n", uid);
-	
 	
 	if(uid >= 0) // started already
 		return 1;
@@ -24,20 +23,35 @@ int kernel_started() {
 		
 }
 
-void load_kernel_modules() {
+SceUID try_load(char* format_path){
 	char kplugin_path[0x200];
-	memset(kplugin_path,0x00,0x200);
+	char titleid[12];
+	
+	memset(titleid, 0x00, sizeof(titleid));
+	memset(kplugin_path, 0x00, sizeof(kplugin_path));
+	
+	sceAppMgrAppParamGetString(0, 12, titleid , 256);
+
+	snprintf(kplugin_path, sizeof(kplugin_path), format_path, titleid);
+	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
+	PRINT_STR("start %s = %x\n", kplugin_path, uid);
+	
+	return uid;
+}
+
+void load_kernel_modules() {
 	
 	if(kernel_started() == 0) {
-		// get current title id
-		char titleid[12];
-		sceAppMgrAppParamGetString(0, 12, titleid , 256);
 		
-		// load f00dbridge
-		snprintf(kplugin_path, sizeof(kplugin_path), "ux0:app/%s/kplugin.skprx", titleid);
-		SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
-		PRINT_STR("start %s = %x\n", kplugin_path, uid);
-		if(uid < 0) return;
+		// try load GcKernKit from anywhere it could be;
+		SceUID           uid   =  try_load("ux0:/app/%s/kplugin.skprx");
+		if(uid < 0)      uid   =  try_load("ux0:/patch/%s/kplugin.skprx");
+		else if(uid < 0) uid   =  try_load("vs0:/app/%s/kplugin.skprx");
+		else if(uid < 0) uid   =  try_load("gro0:/app/%s/kplugin.skprx");
+		else if(uid < 0) uid   =  try_load("grw0:/patch/%s/kplugin.skprx");
+		else if(uid < 0) uid   =  try_load("pd0:/app/%s/kplugin.skprx");
+		else if(uid < 0) uid   =  try_load("host0:/app/%s/kplugin.skprx");
+		else if(uid < 0) return;
 		
 		// restart this application
 		strncpy(kplugin_path, "app0:/eboot.bin", sizeof(kplugin_path));
@@ -81,8 +95,6 @@ void lock_shell() {
 	sceShellUtilLock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
 					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
 					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
 }
@@ -91,8 +103,22 @@ void unlock_shell() {
 	 sceShellUtilUnlock(SCE_SHELL_UTIL_LOCK_TYPE_QUICK_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_POWEROFF_MENU |
 					SCE_SHELL_UTIL_LOCK_TYPE_USB_CONNECTION |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
-					SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
 					SCE_SHELL_UTIL_LOCK_TYPE_MUSIC_PLAYER |
 					SCE_SHELL_UTIL_LOCK_TYPE_PS_BTN);
+}
+
+// disable memory card remove/insert prompt everywhere;
+void init_shell() { 
+	sceShellUtilInitEvents(0);
+	sceShellUtilLock(
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+	);
+}
+
+void term_shell() {
+	sceShellUtilUnlock(
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_INSERTED |
+		SCE_SHELL_UTIL_LOCK_TYPE_MC_REMOVED |
+	);
 }

@@ -5,3 +5,6 @@ int enable_power_off();
 
 void lock_shell();
 void unlock_shell();
+
+void init_shell();
+void term_shell();

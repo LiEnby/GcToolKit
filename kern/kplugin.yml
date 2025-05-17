@@ -1,8 +1,8 @@
-f00dbridge:
+GcKernKit:
   attributes: 0
   version:
     major: 1
-    minor: 6
+    minor: 8
   main:
     start: module_start
     stop: module_stop
@@ -10,19 +10,19 @@ f00dbridge:
     libGcAuthDumper:
       syscall: true
       functions:
-        - ResetGc
-        - ClearCartSecret
-        - GetCartSecret
-        - GetLastCmd20Input
-        - GetLastCmd20KeyId
-        - HasCmd20Captured
-        - ResetCmd20Input
-        - OpenDevice
-        - ReadDevice
-        - WriteDevice
-        - CloseDevice
-        - GetDeviceSize
-        - FormatDevice
-        - GetCardCsd
-        - GetCardId
-        - GetCardExtCsd
+        - kResetGc
+        - kClearCartSecret
+        - kGetCartSecret
+        - kGetLastCmd20Input
+        - kGetLastCmd20KeyId
+        - kHasCmd20Captured
+        - kResetCmd20Input
+        - kOpenDevice
+        - kReadDevice
+        - kWriteDevice
+        - kCloseDevice
+        - kGetDeviceSize
+        - kFormatDevice
+        - kGetCardCsd
+        - kGetCardId
+        - kGetCardExtCsd

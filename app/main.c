@@ -14,7 +14,7 @@
 #include "device.h"
 #include "net.h"
 #include "bgm.h"
-#include "f00dbridge.h"
+#include "GcKernKit.h"
 #include "log.h"
 
 void get_output_filename(char* output, char* format, int size_output) {
@@ -376,18 +376,19 @@ void handle_menu_select_option() {
 }
 
 int main() {
-
 	load_kernel_modules();
 	init_vita2d();
 	init_menus();
 	init_network();
 	init_sound();
+	init_shell();
 	
 	do_gc_insert_prompt();
 	while(1) {
 		handle_menu_select_option();
 	}
 	
+	term_shell();
 	term_sound();
 	term_menus();
 	term_vita2d();
