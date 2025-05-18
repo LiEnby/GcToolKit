@@ -8,7 +8,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
   endif()
 endif()
 
-project(kplugin)
+project(GcKernKit)
 include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -Wall -O3 -std=gnu99")
@@ -50,9 +50,9 @@ target_link_libraries(${PROJECT_NAME}
 
 vita_create_self(${PROJECT_NAME}.skprx ${PROJECT_NAME}
   UNSAFE
-  CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/kplugin.yml
+  CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.yml
 )
-vita_create_stubs(${PROJECT_NAME}-stubs ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/kplugin.yml
+vita_create_stubs(${PROJECT_NAME}-stubs ${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.yml
   KERNEL
 )
 

@@ -63,7 +63,7 @@ int try_load(const char* install_path) {
 	
 	sceAppMgrAppParamGetString(0, 12, titleid , 256);
 
-	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/kplugin.skprx", install_path, titleid);
+	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/GcKernKit.skprx", install_path, titleid);
 	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
 	PRINT_STR("%s(%s) = %x\n", __FUNCTION__, kplugin_path, uid);
 	
