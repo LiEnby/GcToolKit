@@ -8,9 +8,21 @@ This can also be used to format, backup and restore the writable grw0 and mediai
 This writes *.vci* files, (vita cartridge image) which is essentially
 cmd56 authentication data + raw image of gc, 
 
-Can run a backup over the network, to a offical memory card,
-a USB device connected to a Vita TV or OTG on Vita 2k, or Accessory Port on Vita 1K
-or host0 on Development Kits.
+
+# Backup locations
+
+GCToolKit can backup GameCarts to the following locations:
+
+- An Offical Sony Memory Card
+- PSVSD (3G modem replacement)
+- ExFAT formatted USB Drive connected to PlayStation Vita TV.
+- ExFAT formatted USB Drive connected to Vita 2000 via OTG cable.
+- ExFAT formatted USB Drive connected to Vita 1000 via Accessory Port.
+- ``host0:`` on Vita Development Kit.
+- a Computer listening on same local network.
+
+Vita GameCart's are always either 2gb or 4gb in size, 
+for this reason the 1gb internal storage on a Vita 2k- cannot be used.
 
 # Network Backup
 GCToolKit allows to save a VCI of a game over the local network;
@@ -22,9 +34,36 @@ this feature is useful if you don't have a memory card or otherwise, do not have
 
 the source code for it is in the "pc" folder of this repoistory.
 
-# NOTE: you have to disable YAMT or other SD2Vita drivers before using this (as they disable GC Authentication)
+# USB OTG Backup
 
--- Credit
+This program allows backup vita GCs with a USB device connected via an OTG cable
+however this only works with OTG cables with an external power source; or "Y-Cable"
+for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
+
+# FULLY DISABLE YAMT or other SD2Vita driver !!!
+YAMT disables GC Authentication entirely; and enables the SD Card driver instead;
+and obviously SD2Vita takes place of the gamecart slot.
+
+to disable YAMT comment out
+```
+- load	ur0:tai/yamt.skprx
+```
+in `ur0:/tai/boot_config.txt`
+
+then 
+```
+# YAMT
+*NPXS10015
+ur0:tai/yamt.suprx
+*KERNEL
+ur0:tai/yamt_helper.skprx
+```
+
+in `ur0:/tai/config.txt`
+
+simply disabling it in settings isn't enough due to a bug; see [this issue](https://github.com/SKGleba/yamt-vita/issues/28)
+
+# Credits
 -  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
@@ -33,13 +72,8 @@ the source code for it is in the "pc" folder of this repoistory.
 - dots_tb - USB OTG
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
 
--- OTG Compatiblity
 
-This program allows backup vita GCs with a USB device connected via an OTG cable
-however this only works with OTG cables with an external power source; or "Y-Cable"
-for example this one for the Amazon Fire Stick https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT will work.
-
--- Difference between .vci and .psv formats
+# Difference between .vci and .psv formats (why a new format?)
 
 The main difference is how the keys stored. 
 in psvgamesd, the result of gc_auth_mgr_sm function 0x20 is stored,
