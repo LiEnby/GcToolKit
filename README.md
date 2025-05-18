@@ -26,7 +26,9 @@ for this reason the 1gb internal storage on a Vita 2k- cannot be used.
 
 # Network Backup
 GCToolKit allows to save a VCI of a game over the local network;
+
 to do this requires running the program "gc_backup_network" program running on your computer;
+
 this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
 
 - [Windows](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.exe) [(mirror)](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.exe)
@@ -37,12 +39,15 @@ the source code for it is in the "pc" folder of this repoistory.
 # USB OTG Backup
 
 This program allows backup vita GCs with a USB device connected via an OTG cable
+
 however this only works with OTG cables with an external power source; or "Y-Cable"
+
 for example this one for the [Amazon Fire Stick](https://www.amazon.com/ANDTOBO-Micro-Adapter-Power-Devices/dp/B083M1S6QT).
 
-# FULLY DISABLE YAMT or other SD2Vita driver !!!
-YAMT disables GC Authentication entirely; and enables the SD Card driver instead;
-and obviously SD2Vita takes place of the gamecart slot.
+# Requires disabling SD2Vita driver
+YAMT disables GC Authentication entirely; and enables the (offical) SD Card driver instead;
+
+and obviously SD2Vita takes place of the gamecart, so it's not possible to use it with this
 
 to disable YAMT comment out
 ```
@@ -61,17 +66,20 @@ ur0:tai/yamt_helper.skprx
 
 in `ur0:/tai/config.txt`
 
-simply disabling it in settings isn't enough due to a bug; see [this issue](https://github.com/SKGleba/yamt-vita/issues/28)
+it may differ if your using a different SD2Vita driver;
+
+keep in mind that you have to do this to use gamecarts *in general* not just with GCToolKit.
+
+NOTE: simply disabling it in settings isn't enough due to a bug; see [this issue](https://github.com/SKGleba/yamt-vita/issues/28)
 
 # Credits
 -  <sup>The Crystal System</sup> Li- Programming the thing, VCI Format, Reverse engineering gamecart CMD56
 - olebeck - CMD56 helps
 - Robots System - Selecting music, choosing port numbers, ~~emotional support~~
 - Princess of Sleeping - ExFAT Format code, CMD56 helps
-- SKGLeba - psp2spl for F00D Code execution
-- dots_tb - USB OTG
+- dots_tb - original research into USB OTG, and Accessory Port
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
-
+~~- SKGLeba - psp2spl for F00D Code execution~~ (no longer used)
 
 # Difference between .vci and .psv formats (why a new format?)
 
