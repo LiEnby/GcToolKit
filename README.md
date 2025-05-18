@@ -1,16 +1,26 @@
 # GcToolKit
 
 Tool to create 1:1 backups of PSV Game Cartridges
-including CMD56 authenticationd data.
+including CMD56 authentication data.
 
 This can also be used to format, backup and restore the writable grw0 and mediaid sections of gamecarts.
 
 This writes *.vci* files, (vita cartridge image) which is essentially
-cmd56 authentication data + raw image of gc
+cmd56 authentication data + raw image of gc, 
 
 Can run a backup over the network, to a offical memory card,
 a USB device connected to a Vita TV or OTG on Vita 2k, or Accessory Port on Vita 1K
 or host0 on Development Kits.
+
+# Network Backup
+GCToolKit allows to save a VCI of a game over the local network;
+to do this requires running the program "gc_backup_network" program running on your computer;
+this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
+
+- [Windows](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.exe) [mirror](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.exe)
+- [Linux](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.elf) [mirror](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.elf)
+
+the source code for it is in the "pc" folder of this repoistory.
 
 # NOTE: you have to disable YAMT or other SD2Vita drivers before using this (as they disable GC Authentication)
 
@@ -41,7 +51,7 @@ SHA256 is a one-way function and so you cannot go backwards from
 the data captured in psvgamesd to the packet20 and packet18 constants.
 
 main advantage is that with VCI it would be thereotically possible to create a vita flash cartridge. .
-this, also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI
+this also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI without keys
 
 for tools to convert to/from VCI format to others, see: https://silica.codes/Li/VCI-TOOLS
 
