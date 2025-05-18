@@ -17,8 +17,8 @@ GCToolKit allows to save a VCI of a game over the local network;
 to do this requires running the program "gc_backup_network" program running on your computer;
 this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
 
-- [Windows](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.exe) [mirror](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.exe)
-- [Linux](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.elf) [mirror](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.elf)
+- [Windows](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.exe) [(mirror)](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.exe)
+- [Linux](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.elf) [(mirror)](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.elf)
 
 the source code for it is in the "pc" folder of this repoistory.
 
