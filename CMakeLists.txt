@@ -14,7 +14,7 @@ include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 set(VITA_APP_NAME "GC ToolKit")
 set(VITA_TITLEID  "GCTK10000")
 
-set(VITA_VERSION  "01.04")
+set(VITA_VERSION  "01.05")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -53,8 +53,9 @@ add_executable(${PROJECT_NAME}
 	app/gc_ident.c
 	app/bgm.cpp
 )
-add_dependencies(GcToolKit GcKernKit.skprx-self)
+
 add_dependencies(GcToolKit GcKernKit-stubs)
+add_dependencies(GcToolKit GcKernKit.skprx-self)
 
 target_link_libraries(${PROJECT_NAME}
 	GcKernKit_stub
@@ -92,7 +93,6 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 vita_create_self(eboot.bin ${PROJECT_NAME} UNSAFE)
-
 
 vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} eboot.bin
   VERSION ${VITA_VERSION}

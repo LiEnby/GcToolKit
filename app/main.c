@@ -5,6 +5,7 @@
 #include <vitasdk.h>
 #include <vita2d.h>
 
+#include "ctrl.h"
 #include "crypto.h"
 #include "gameinfo.h"
 #include "kernel.h"
@@ -377,6 +378,7 @@ void handle_menu_select_option() {
 
 int main() {
 	load_kernel_modules();
+	init_ctrl();
 	init_vita2d();
 	init_menus();
 	init_network();

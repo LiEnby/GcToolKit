@@ -58,23 +58,23 @@ static uint8_t options[0x1000];
 					  CALC_LAST_OPTION(); \
 					  int ctrl = get_key(); \
 					  \
-					  switch(ctrl) { \
-						 case SCE_CTRL_UP: \
-							 do{ \
-								selected--; \
-							 } while(selected > 0 && options[selected] == 0); \
-							 break; \
-						 case SCE_CTRL_DOWN: \
-							 do{ \
-								selected++; \
-							 } while(selected < sizeof(options) && options[selected] == 0); \
-							 break; \
-					     case SCE_CTRL_CIRCLE: \
-							 return OP_CANCELED; \
-						 case SCE_CTRL_CROSS: \
-							 break; \
+					  if(ctrl == SCE_CTRL_UP) {\
+						do{ \
+							selected--; \
+						 } while(selected > 0 && options[selected] == 0); \
 					  } \
-					  if(ctrl == SCE_CTRL_CROSS) break; \
+					  else if(ctrl == SCE_CTRL_DOWN) {\
+						do{ \
+							selected++; \
+						} while(selected < sizeof(options) && options[selected] == 0); \
+					  } \
+					  else if(ctrl == SCE_CTRL_CANCEL) {\
+						return OP_CANCELED;\
+					  }\
+					  else if(ctrl == SCE_CTRL_CONFIRM) {\
+						break; \
+					  } \
+					  \
 					  if(selected > last_option)  { \
 						selected = last_option; \
 						\
