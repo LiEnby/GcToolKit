@@ -36,7 +36,7 @@ int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt
 	return TAI_CONTINUE(int, ksceSblSmCommCallFuncHookRef, id, service_id, service_result, data, size);
 }
 
-void cmd56_patch() {
+int cmd56_patch() {
 	memset(LAST_CAPTURED_CMD20_INPUT, 0x00, sizeof(LAST_CAPTURED_CMD20_INPUT));
 	
 	tai_module_info_t gc_authmgr_info;
@@ -83,14 +83,15 @@ void cmd56_patch() {
 	if(sdstor_get_info >= 0){
 		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x3BE0 | 1, (uintptr_t*)&gc_insert_interupt);
 		PRINT_STR("module_get_offset 0x%04X\n", res);
+		return res;
 	}
-	
+	return sdstor_get_info;	
 }
 
-void cmd56_unpatch() {
+int cmd56_unpatch() {
 	if (ksceSblSmCommCallFuncHook >= 0)		 taiHookReleaseForKernel(ksceSblSmCommCallFuncHook, ksceSblSmCommCallFuncHookRef);
 	if (proto_keyid_check_inject >= 0)		 taiInjectReleaseForKernel(proto_keyid_check_inject);
-
+	return 0;
 }
 
 // user syscalls
@@ -114,13 +115,10 @@ int kGetLastCmd20KeyId() {
 int kHasCmd20Captured() {
 	return HAS_CAPTURED_CMD20;
 }
-
+// spent ages trying to find a way to run gc authentication again when already inserted
+// then i had a thought ???
+// have you tried turning it off and on again ????
 int kResetGc() {
-	// spent ages trying to find a way to run gc authentication again when already inserted
-	// then i had a thought ???
-	// have you tried turning it off and on again ????
-	
-	
 	char param_4[0x10];
 	memset(param_4, 0x00, sizeof(param_4));
 	

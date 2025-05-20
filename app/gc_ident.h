@@ -24,5 +24,6 @@ typedef struct GcInfo {
 } GcInfo;
 
 void mmc_datetime_from_byte(uint8_t rev, uint8_t mdt, uint16_t* year, uint16_t* month);
-char* mmc_vendor_id_to_manufacturer(uint8_t vendorId);
+const char* mmc_vendor_id_to_manufacturer(uint8_t vendorId);
+const char* keyid_to_keygroup(uint16_t keyId);
 void get_gc_info(GcInfo* info);

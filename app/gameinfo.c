@@ -10,8 +10,6 @@
 #define DEFAULT_TITLEID "NPXS99999"
 #define DEFAULT_TITLE "UNKNOWN"
 
-
-
 int read_titleid(char* title_id) {
 	return read_first_filename("gro0:/app", title_id, 12);
 }

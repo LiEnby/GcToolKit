@@ -6,6 +6,7 @@
 #include <vitasdk.h>
 #include "err.h"
 #include "log.h"
+#include "kernel.h"
 
 static uint8_t disable_power = 0;
 
@@ -47,11 +48,10 @@ int kernel_started() {
 	char buffer[0x8];
 	memset(buffer, 0x00, sizeof(buffer));
 	
-	SceUID uid = _vshKernelSearchModuleByName("GcKernKit", buffer);
+	SceUID uid = _vshKernelSearchModuleByName(KMODULE_NAME, buffer);
 	PRINT_STR("_vshKernelSearchModuleByName = %x\n", uid);
 	
 	return (uid > 0);
-		
 }
 
 int try_load(const char* install_path) {
@@ -63,11 +63,11 @@ int try_load(const char* install_path) {
 	
 	sceAppMgrAppParamGetString(0, 12, titleid , 256);
 
-	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/GcKernKit.skprx", install_path, titleid);
+	snprintf(kplugin_path, sizeof(kplugin_path)-1, "%s/%s/%s.skprx", install_path, titleid, KMODULE_NAME);
 	SceUID uid = taiLoadStartKernelModule(kplugin_path, 0, NULL, 0);
 	PRINT_STR("%s(%s) = %x\n", __FUNCTION__, kplugin_path, uid);
 	
-	return uid > 0;
+	return (uid > 0);
 }
 
 void load_kernel_modules() {

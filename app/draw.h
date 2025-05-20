@@ -1,17 +1,20 @@
 #include <vita2d.h>
 
-#define MENUOVERLAY_WIDTH (494)
-#define MENUOVERLAY_HEIGHT (506) 
-
-#define MENUOVERLAY_PAD (19)
-#define MENUOVERLAY_POS_X ((SCREEN_WIDTH - MENUOVERLAY_WIDTH) - MENUOVERLAY_PAD)
-#define MENUOVERLAY_POS_Y MENUOVERLAY_PAD
-
-#define COLOR_WHITE ( RGBA8(251,251,251,255) )
+#define COLOR_WHITE ( RGBA8(255,255,255,255) )
+#define COLOR_RED ( RGBA8(255,0,0,255) )
+#define COLOR_BLUE ( RGBA8(0,255,0,255) )
+#define COLOR_YELLOW ( RGBA8(255,255,0,255) )
+#define COLOR_LIGHT_BLUE ( RGBA8(0,255,255,255 ) )
+#define COLOR_GREEN ( RGBA8(0,0,255,255) )
 #define COLOR_BLACK ( RGBA8(0,0,0,255) )
 
-#define SCREEN_WIDTH 960
-#define SCREEN_HEIGHT 544
+#define BUTTON_CROSS    "\xe2\x95\xb3"
+#define BUTTON_CIRCLE   "\xe2\x97\x8b"
+#define BUTTON_TRIANGLE "\xe2\x96\xb3"
+#define BUTTON_SQUARE   "\xe2\x96\xa1"
+
+#define FANCY_BUTTON_CROSS    "\xef\xa2\x80"
+#define FANCY_BUTTON_CIRCLE   "\xef\xa2\x81"
 
 
 void init_vita2d();
@@ -19,10 +22,13 @@ void term_vita2d();
 void draw_background();
 void start_draw();
 void end_draw();
+void draw_controls(uint8_t cancel) ;
 void draw_texture(vita2d_texture* texture, int x, int y);
 void draw_texture_center(int y, vita2d_texture* texture);
+void draw_text_color(int x, int y, int color ,char* msg);
 void draw_text(int x, int y, char* msg);
 void draw_text_center(int y, char* msg);
+void draw_text_center_color(int y, int color, char* msg);
 void draw_option(int y, char* opt, int selected);
 void draw_title(char* msg);
 void free_texture(vita2d_texture* texture);

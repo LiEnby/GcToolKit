@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#define ENABLE_LOGGING 1
 
 #ifdef ENABLE_LOGGING
 #define PRINT_STR(...) sceClibPrintf(__VA_ARGS__)

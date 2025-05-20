@@ -10,5 +10,5 @@ typedef struct SceSblSmCommGcData {
     int always0;
 } SceSblSmCommGcData;
 
-void cmd56_patch();
-void cmd56_unpatch();
+int cmd56_patch();
+int cmd56_unpatch();

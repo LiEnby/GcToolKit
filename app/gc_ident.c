@@ -4,9 +4,27 @@
 
 #include "log.h"
 #include <string.h>
+const char* keyid_to_keygroup(uint16_t keyId) {
+	const char* keyType = "Unknown";
+	switch(keyId) {
+		case 0x1:
+			keyType = "Retail";
+			break;
+		case 0x8001:
+			keyType = "Prototype Group 1";
+			break;
+		case 0x8002:
+			keyType = "Prototype Group 2";
+			break;
+		case 0x8003:
+			keyType = "Prototype Group 3";
+			break;
+	}
+	return keyType;
+}
 
-char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
-	char* vendor = "Unknown";
+const char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
+	const char* vendor = "Unknown";
 	switch(vendorId) {
 		case 0x00:
 			vendor = "Sandisk";
@@ -43,6 +61,7 @@ char* mmc_vendor_id_to_manufacturer(uint8_t vendorId) {
 		case 0xfe:
 			vendor = "Micron";
 			break;
+		
 	}
 	
 	return vendor;

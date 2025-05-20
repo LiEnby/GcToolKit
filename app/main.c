@@ -15,8 +15,8 @@
 #include "device.h"
 #include "net.h"
 #include "bgm.h"
-#include "GcKernKit.h"
 #include "log.h"
+#include "GcKernKit.h"
 
 void get_output_filename(char* output, char* format, int size_output) {
 	char title_id[64];
@@ -180,7 +180,7 @@ void handle_menu_set_output(char* fmt, int what) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Backup created at: \"%.20s\" ...", output_folder);
+		snprintf(msg, sizeof(msg), "Backup created at: \"%s\" ...", output_folder);
 		do_confirm_message("Backup Success!", msg);
 	}
 
@@ -277,7 +277,7 @@ void handle_select_file(int what, char* folder) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Restored from: \"%.25s\" ...", input_file);
+		snprintf(msg, sizeof(msg), "Restored from: \"%s\" ...", input_file);
 		do_confirm_message("Restore Success!", msg);
 	}
 }
@@ -389,6 +389,7 @@ int main() {
 	while(1) {
 		handle_menu_select_option();
 	}
+	
 	
 	term_shell();
 	term_sound();

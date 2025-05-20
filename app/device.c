@@ -81,12 +81,12 @@
 		if(wr < 0) ERROR(wr); \
 	}
 
-#define CREATE_DEV_SZ(dev_fd) \
+#define CREATE_DEV_SZ(placeholder_txt, dev_fd) \
 	uint64_t device_size = 0; \
 	kGetDeviceSize(dev_fd, &device_size); \
 	PRINT_STR("device_size = %llx\n", device_size); \
 	if(device_size == 0) ERROR(-1); \
-	if(progress_callback != NULL) progress_callback("", "", total, device_size)\
+	if(progress_callback != NULL) progress_callback((const char*)placeholder_txt, (char*)placeholder_txt, total, device_size) \
 	
 #define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)
 
@@ -146,7 +146,7 @@ int dump_device_network(char* ip_address, unsigned short port, const char* block
 	DO_CHECKED(rd_fd, kOpenDevice, block_device, SCE_O_RDONLY);
 
 	// get device size
-	CREATE_DEV_SZ(rd_fd);
+	CREATE_DEV_SZ(block_device, rd_fd);
 	
 	// open socket
 	DO_CHECKED(wr_fd, begin_file_send, ip_address, port, path, (keys != NULL) ? device_size + sizeof(VciHeader) : device_size);
@@ -180,7 +180,7 @@ int dump_device(const char* block_device, char* path, GcCmd56Keys* keys, void (*
 	DO_CHECKED(wr_fd, sceIoOpen, path, SCE_O_WRONLY | SCE_O_CREAT | SCE_O_TRUNC, 0777);
 	
 	// get device size
-	CREATE_DEV_SZ(rd_fd);
+	CREATE_DEV_SZ(block_device, rd_fd);
 
 	// write vci header
 	CREATE_VCI_HEADER(sceIoWrite);
@@ -215,7 +215,7 @@ int restore_device(const char* block_device, char* path, void (*progress_callbac
 	DO_CHECKED(wr_fd, kOpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
-	CREATE_DEV_SZ(wr_fd);
+	CREATE_DEV_SZ(block_device, wr_fd);
 	if(img_file_sz > device_size) ERROR(-2);
 	
 	// enter read/write loop
@@ -244,7 +244,7 @@ int wipe_device(const char* block_device, void (*progress_callback)(const char*,
 	DO_CHECKED(wr_fd, kOpenDevice, block_device, SCE_O_WRONLY);
 	
 	// get device size
-	CREATE_DEV_SZ(wr_fd);
+	CREATE_DEV_SZ(block_device, wr_fd);
 	
 	// enter read/write loop
 	DEVICE_ACCESS_LOOP(read_null, kWriteDevice);

@@ -1,15 +1,31 @@
 #include "draw.h"
+#include "ctrl.h"
 #include <vita2d.h>
 #include <vitasdk.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 
-static vita2d_pgf *pgf;
-static vita2d_pvf *pvf;
+#define MENUOVERLAY_WIDTH (494)
+#define MENUOVERLAY_HEIGHT (506) 
 
-static vita2d_texture *background;
-static vita2d_texture *menuoverlay;
+#define MENUOVERLAY_PAD (19)
+#define MENUOVERLAY_POS_X ((SCREEN_WIDTH - MENUOVERLAY_WIDTH) - MENUOVERLAY_PAD)
+#define MENUOVERLAY_POS_Y (MENUOVERLAY_PAD)
+
+#define BUTTONOVERLAY_Y MENUOVERLAY_PAD + (MENUOVERLAY_HEIGHT - 10)
+#define TITLE_Y (MENUOVERLAY_POS_Y + 35)
+
+#define SCREEN_WIDTH (960)
+#define SCREEN_HEIGHT (544)
+
+#define TEXT_SIZE (1.0f)
+
+static vita2d_pgf* pgf;
+static vita2d_pvf* pvf;
+
+static vita2d_texture* background;
+static vita2d_texture* menuoverlay;
 
 
 void init_vita2d() {
@@ -33,9 +49,12 @@ void term_vita2d() {
 	vita2d_free_texture(menuoverlay);
 }
 
+void draw_text_color(int x, int y, int color ,char* msg) {	
+	vita2d_pvf_draw_text(pvf, x, y, color, TEXT_SIZE, msg);
+}
+
 void draw_text(int x, int y, char* msg) {
-	float size = 1.0f;
-	vita2d_pgf_draw_text(pgf, x, y, COLOR_WHITE, size, msg);
+	draw_text_color(x, y, COLOR_WHITE, msg);
 }
 
 void draw_progress_bar(int y, uint64_t done, uint64_t total) {
@@ -50,30 +69,48 @@ void draw_progress_bar(int y, uint64_t done, uint64_t total) {
 
 }
 
-void draw_text_center(int y, char* msg) {
-	float size = 1.0f;
-	int text_width = 0;
-	int text_height = 0;
-	vita2d_pgf_text_dimensions(pgf, size, msg, &text_width, &text_height);
+void draw_text_center_color(int y, int color, char* msg) {
+	int text_width = MENUOVERLAY_WIDTH;
+	int text_height = 0;	
+	char processed_msg[512];
+	
+	// Basically we want to trim every message so it fits insize the MENUOVERLAY image,
+	strncpy(processed_msg, msg, sizeof(processed_msg));
+	size_t msg_len = strnlen(msg, sizeof(processed_msg)-1);
+	
+	do{
+		processed_msg[msg_len] = 0; // remove last character ...
+		
+		vita2d_pvf_text_dimensions(pvf, TEXT_SIZE, processed_msg, &text_width, &text_height); // check size
+
+		msg_len--; // minus 1 from the message length
+	} while( msg_len > 0 && text_width > (MENUOVERLAY_WIDTH - (MENUOVERLAY_PAD * 2)) );
+	
+	
+	// Calculate the x position as center based on the menu overlay;
 	int text_x = MENUOVERLAY_POS_X + (((MENUOVERLAY_WIDTH)/2) - (text_width/2));
-	draw_text(text_x, y, msg);
+	
+	// draw this new message to the screen
+	draw_text_color(text_x, y, color, processed_msg);
+}
+
+void draw_text_center(int y, char* msg) {
+	draw_text_center_color(y, COLOR_WHITE, msg);
 }
 
 void draw_option(int y, char* opt, int selected) {
-	char option_text[512];
-	if(!selected)
-		snprintf(option_text, sizeof(option_text), "  %s  ", opt);
-	else
-		snprintf(option_text, sizeof(option_text), "> %s <", opt);
+	if(!selected) {
+		draw_text_center_color(y, COLOR_WHITE, opt);
+	}
+	else {
+		draw_text_center_color(y, COLOR_YELLOW, opt);
+	}
 	
-	draw_text_center(y, option_text);
 }
 
 void draw_title(char* title) {
-	draw_text_center(60, title);	
+	draw_text_center(TITLE_Y, title);	
 }
-
-
 
 void draw_texture_center(int y, vita2d_texture* texture) {
 	int x = MENUOVERLAY_WIDTH / 2;	
@@ -82,9 +119,25 @@ void draw_texture_center(int y, vita2d_texture* texture) {
 	draw_texture(texture, MENUOVERLAY_POS_X + (x - w), y);
 }
 
+void draw_controls(uint8_t cancel) {
+	
+	char ctrl_text[512];
+	if(!cancel) {
+	snprintf(ctrl_text, sizeof(ctrl_text), "%s OK", 
+											(SCE_CTRL_CONFIRM == SCE_CTRL_CROSS) ? BUTTON_CROSS : BUTTON_CIRCLE);
+	}
+	else {
+	snprintf(ctrl_text, sizeof(ctrl_text), "%s OK / %s Cancel", 
+											(SCE_CTRL_CONFIRM == SCE_CTRL_CROSS) ? BUTTON_CROSS : BUTTON_CIRCLE,
+											(SCE_CTRL_CANCEL == SCE_CTRL_CIRCLE) ? BUTTON_CIRCLE : BUTTON_CROSS);
+	}
+	
+	draw_text_center_color(BUTTONOVERLAY_Y, COLOR_LIGHT_BLUE, ctrl_text);
+}
+
 void draw_background() {
 	draw_texture(background, 0, 0);
-	draw_texture(menuoverlay, MENUOVERLAY_POS_X, MENUOVERLAY_POS_Y);
+	draw_texture(menuoverlay, MENUOVERLAY_POS_X, MENUOVERLAY_POS_Y);	
 }
 
 void start_draw() {

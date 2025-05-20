@@ -1,5 +1,4 @@
 #include <vitasdkkern.h>
-#define ENABLE_LOGGING 1
 
 #ifdef ENABLE_LOGGING
 #define PRINT_STR(...) ksceDebugPrintf(__VA_ARGS__)

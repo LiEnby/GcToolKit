@@ -40,7 +40,7 @@ static uint8_t options[0x1000];
 #define RETURNOPT() return option
 #define CALC_FIRST_OPTION() for(first_option = 0; (options[first_option] != 1 && first_option < sizeof(options)); first_option++)
 #define CALC_LAST_OPTION() for(last_option = sizeof(options); (options[last_option] != 1 && last_option > 0); last_option--)
-#define WINDOW_SIZE (20)
+#define WINDOW_SIZE (19)
 #define PROCESS_MENU(func, ...) \
 					  int window = 0; \
 					  int selected = 0; \
@@ -94,22 +94,28 @@ static uint8_t options[0x1000];
 #define RESTORE_MENU(title, what, dev, to) start_draw(); \
 					 draw_background(); \
 					 \
-					 char output_txt[128]; \
-					 snprintf(output_txt, sizeof(output_txt), title " %.30s ...", dev); \
+					 char output_txt[512]; \
+					 snprintf(output_txt, sizeof(output_txt), "%s %s ...", title, dev); \
 					 draw_title(output_txt); \
 					 \
-					 snprintf(output_txt, sizeof(output_txt), what " \"%.30s\" ...", to); \
+					 snprintf(output_txt, sizeof(output_txt), "%s: %s ...", what, to); \
 					 draw_text_center(200, output_txt); \
 					 \
 					 draw_progress_bar(210, progress, total); \
-					 snprintf(output_txt, sizeof(output_txt), "%llu / %llu (%i%%)", progress, total, (int)( (((float)progress) / ((float)total)) * 100.0)); \
+					 \
+					 snprintf(output_txt, sizeof(output_txt), "%lluMiB / %lluMiB", (uint64_t)(((float)progress)/(1048576.0f)), (uint64_t)(((float)total)/(1048576.0f))); \
 					 draw_text_center(260, output_txt); \
+					 \
+					 snprintf(output_txt, sizeof(output_txt), "%llu bytes copied of %llu total ...", progress, total); \
+					 draw_text_center(280, output_txt); \
+					 \
+					 snprintf(output_txt, sizeof(output_txt), "%s %i%% completed.", what, (int)((((float)progress) / ((float)total)) * 100.0)); \
+					 draw_text_center(330, output_txt); \
 					 \
 					 end_draw()
 
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
-
 }
 
 void term_menus() {
@@ -132,9 +138,10 @@ void draw_dump_progress(const char* device, char* output_filename, uint64_t prog
 int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, uint8_t has_mediaid) {
 	start_draw();
 	draw_background();
+	draw_controls(1);
 
 	char w_title[128];
-	snprintf(w_title, sizeof(w_title), "What to do with %.25s ...", title);
+	snprintf(w_title, sizeof(w_title), "What to do with %s ...", title);
 	draw_title(w_title);
 	
 	DEFOPT(200);
@@ -173,9 +180,9 @@ void do_gc_insert_prompt() {
 }
 
 int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0) {
-	
 	start_draw();
 	draw_background();
+	draw_controls(1);
 	
 	draw_title("Select input device ...");
 	
@@ -193,14 +200,14 @@ int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uin
 }
 
 int draw_select_output_location(int* selected, int* window, char* output_file, uint8_t have_ux0, uint8_t have_xmc, uint8_t have_usb, uint8_t have_host0, uint8_t save_network) {
-	
 	start_draw();
 	draw_background();
+	draw_controls(1);
 	
 	draw_title("Select output device ...");
 
 	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "\"%.45s\"", output_file);
+	snprintf(output_txt, sizeof(output_txt), "%s", output_file);
 	draw_text_center(200, output_txt);
 	
 	DEFOPT(240);
@@ -222,24 +229,25 @@ int draw_select_output_location(int* selected, int* window, char* output_file, u
 int draw_select_file(int* selected, int* window, char* input_folder, char* folders, int total_files) {
 	start_draw();
 	draw_background();
+	draw_controls(1);
 	
 	char title[128];
-	snprintf(title, sizeof(title), "Select a file from: %.15s ...", input_folder);
+	snprintf(title, sizeof(title), "Select a file from: %s ...", input_folder);
 	draw_title(title);
 	
 	DEFOPT(110);
 
 	// check if window - total_files is less than the window size.	
 	// reset window to window_size if it is
-	if( *window > (total_files % WINDOW_SIZE) ) {
-		*window = (total_files % WINDOW_SIZE);
+	if( *window > (total_files % WINDOW_SIZE)-1 ) {
+		*window = (total_files % WINDOW_SIZE)-1;
 	}
 	
 	for(int i = *window; i <= *window + WINDOW_SIZE; i++) {
 		if(i >= total_files) break;
 		
 		char file[MAX_PATH];
-		snprintf(file, sizeof(file), "%.45s", folders + (i * MAX_PATH));
+		snprintf(file, sizeof(file), "%s", folders + (i * MAX_PATH));
 		ADDOPT(1, file);
 	}
 	
@@ -250,9 +258,9 @@ int draw_select_file(int* selected, int* window, char* input_folder, char* folde
 
 
 int draw_network_settings(int* selected, int* window, char* ip_address, unsigned short port) {
-	
 	start_draw();
 	draw_background();
+	draw_controls(1);
 	
 	draw_title("Enter Network Address ...");
 
@@ -261,7 +269,7 @@ int draw_network_settings(int* selected, int* window, char* ip_address, unsigned
 	draw_text_center(250, "and enter the IP of the device its running on.");
 
 	char output_txt[128];
-	snprintf(output_txt, sizeof(output_txt), "Current Setting: %.15s on port %u", ip_address, port);
+	snprintf(output_txt, sizeof(output_txt), "Current Setting: %s on port %u", ip_address, port);
 	draw_text_center(300, output_txt);
 	
 	DEFOPT(340);
@@ -289,6 +297,7 @@ void draw_ime() {
 int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 	start_draw();
 	draw_background();
+	draw_controls(1);
 	
 	char output_txt[128];
 	snprintf(output_txt, sizeof(output_txt), "Format %s to TexFAT? ...", device);
@@ -312,11 +321,11 @@ int draw_format_confirm_menu(int* selected, int* window, const char* device) {
 void draw_confirmation_message(char* title, char* msg) {
 	start_draw();
 	draw_background();
+	draw_controls(0);
 	
 	draw_title(title);
 
 	draw_text_center(200, msg);
-	draw_text_center(250, "Press any button to continue ...");
 	
 	end_draw();
 }
@@ -324,6 +333,7 @@ void draw_confirmation_message(char* title, char* msg) {
 void draw_device_info(GcInfo* info) {
 	start_draw();
 	draw_background();
+	draw_controls(0);
 	
 	draw_title("GC Information");
 	
@@ -334,11 +344,11 @@ void draw_device_info(GcInfo* info) {
 	memset(msg, 0x00, sizeof(msg));
 	
 	TO_HEX(info->Cid, sizeof(info->Cid), hex);
-	snprintf(msg, sizeof(msg), "CID:%s", hex);
+	snprintf(msg, sizeof(msg), "MMC CID: %s", hex);
 	draw_text_center(120, msg);
 	
 	TO_HEX(info->Csd, sizeof(info->Cid), hex);
-	snprintf(msg, sizeof(msg), "CSD:%s", hex);
+	snprintf(msg, sizeof(msg), "MMC CSD: %s", hex);
 	draw_text_center(140, msg);
 
 	snprintf(msg, sizeof(msg), "Extended CSD Revision: 0x%02X", info->ExtCsdRev);
@@ -360,10 +370,18 @@ void draw_device_info(GcInfo* info) {
 	snprintf(msg, sizeof(msg), "Manufactured Date: %u/%u", info->Month, info->Year);
 	draw_text_center(260, msg);
 	
-	snprintf(msg, sizeof(msg), "CMD56 KeyId 0x%x", info->KeyId);
+	
+	TO_HEX(info->KeySet.packet18_key, sizeof(info->KeySet.packet18_key), hex);
+	snprintf(msg, sizeof(msg), "CMD56 Key18: %s", hex);
 	draw_text_center(310, msg);
 	
-	draw_text_center(360, "Press any button to continue ...");
+	TO_HEX(info->KeySet.packet20_key, sizeof(info->KeySet.packet20_key), hex);
+	snprintf(msg, sizeof(msg), "CMD56 Key20: %s", hex);
+	draw_text_center(330, msg);
+	
+	snprintf(msg, sizeof(msg), "CMD56 KeyID: %s (0x%02X)", keyid_to_keygroup(info->KeyId), info->KeyId);
+	draw_text_center(350, msg);
+	
 		
 	end_draw();
 }

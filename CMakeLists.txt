@@ -13,7 +13,6 @@ include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 
 set(VITA_APP_NAME "GC ToolKit")
 set(VITA_TITLEID  "GCTK10000")
-
 set(VITA_VERSION  "01.05")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
