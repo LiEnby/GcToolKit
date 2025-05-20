@@ -127,7 +127,7 @@ void draw_controls(uint8_t cancel) {
 											(SCE_CTRL_CONFIRM == SCE_CTRL_CROSS) ? BUTTON_CROSS : BUTTON_CIRCLE);
 	}
 	else {
-	snprintf(ctrl_text, sizeof(ctrl_text), "%s OK / %s Cancel", 
+	snprintf(ctrl_text, sizeof(ctrl_text), "%s OK / %s BACK", 
 											(SCE_CTRL_CONFIRM == SCE_CTRL_CROSS) ? BUTTON_CROSS : BUTTON_CIRCLE,
 											(SCE_CTRL_CANCEL == SCE_CTRL_CIRCLE) ? BUTTON_CIRCLE : BUTTON_CROSS);
 	}

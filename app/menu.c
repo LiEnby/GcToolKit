@@ -91,7 +91,8 @@ static uint8_t options[0x1000];
 					  PRINT_STR("window: %x\n", window); \
 				  }
 
-#define RESTORE_MENU(title, what, dev, to) start_draw(); \
+#define RESTORE_MENU(title, what, dev, to) \
+					 start_draw(); \
 					 draw_background(); \
 					 \
 					 char output_txt[512]; \
@@ -113,6 +114,12 @@ static uint8_t options[0x1000];
 					 draw_text_center(330, output_txt); \
 					 \
 					 end_draw()
+#define WAIT_FOR_CONFIRM() \
+					do {\
+						int ctrl = get_key(); \
+						if(ctrl == SCE_CTRL_CONFIRM) break;\
+						else if(ctrl == SCE_CTRL_CANCEL) break;\
+					} while(1)\
 
 void init_menus() {
 	insertgc_tex = load_texture("app0:/res/insertgc.png");
@@ -394,8 +401,7 @@ void do_device_info() {
 	get_gc_info(&info);
 	draw_device_info(&info);		
 	
-	get_key();
-	
+	WAIT_FOR_CONFIRM();
 }
 
 int do_network_options(char* ip_address, unsigned short port) {	
@@ -445,13 +451,13 @@ int do_select_file(char* folder, char* output, char* extension, uint64_t max_siz
 }
 
 void do_ime() {
-	for(int i = 0; i < 0x5; i++)
-		draw_ime();
+	for(int i = 0; i < 0x5; i++) draw_ime();
 }
 
 void do_confirm_message(char* title, char* msg) {
 	draw_confirmation_message(title, msg);
-	get_key();
+
+	WAIT_FOR_CONFIRM();
 }
 
 
