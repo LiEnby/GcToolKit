@@ -564,6 +564,8 @@ int do_select_input_location() {
 }
 
 int do_error(int error) {
+	if(error == OP_CANCELED) return error;
+	
 	char msg[0x1028];	
 	snprintf(msg, sizeof(msg), "There was an error ( res = 0x%08X )", error);
 	do_confirm_message("Error!", msg);

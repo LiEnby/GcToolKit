@@ -180,7 +180,7 @@ void handle_menu_set_output(char* fmt, int what) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Backup created at: \"%s\" ...", output_folder);
+		snprintf(msg, sizeof(msg), "Backup created at: %s ...", output_folder);
 		do_confirm_message("Backup Success!", msg);
 	}
 
@@ -221,7 +221,6 @@ void handle_wipe_option(int what) {
 	
 	if(what == RESET_GRW0) res = handle_format_confirm_and_format(block_device);
 	else if(what == RESET_MEDIAID) res = do_device_wipe_and_format(block_device, 1, 0);
-	
 	if(res == OP_CANCELED) return;
 	
 	char msg[0x1028];	
@@ -262,7 +261,7 @@ void handle_select_file(int what, char* folder) {
 	// show file selection
 	char file[MAX_PATH];
 	int selected = do_select_file(folder, file, extension, total_device_size);
-	
+	if(selected == OP_CANCELED)
 	if(selected < 0) {
 		do_error(selected);
 		return;
@@ -277,7 +276,7 @@ void handle_select_file(int what, char* folder) {
 		do_error(res);
 	}
 	else{
-		snprintf(msg, sizeof(msg), "Restored from: \"%s\" ...", input_file);
+		snprintf(msg, sizeof(msg), "Restored from: %s ...", input_file);
 		do_confirm_message("Restore Success!", msg);
 	}
 }
