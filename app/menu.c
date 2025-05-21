@@ -145,7 +145,7 @@ void draw_dump_progress(const char* device, char* output_filename, uint64_t prog
 int draw_gc_options(int* selected, int* window, char* title, uint8_t has_grw0, uint8_t has_mediaid) {
 	start_draw();
 	draw_background();
-	draw_controls(1);
+	draw_controls(0);
 
 	char w_title[128];
 	snprintf(w_title, sizeof(w_title), "What to do with %s ...", title);
