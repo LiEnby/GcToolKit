@@ -165,7 +165,6 @@ int kResetGc() {
 		// wait for event to finish
 		res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000,5,0,0);
 		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
-		
 		return res;
 	}
 	return -1130;
