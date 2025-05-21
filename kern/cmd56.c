@@ -21,7 +21,7 @@ static int proto_keyid_check_inject = -1;
 static int ksceSblSmCommCallFuncHook = -1;
 static tai_hook_ref_t ksceSblSmCommCallFuncHookRef;
 
-int (* gc_insert_interupt)(uint32_t param_1, int param_2, int param_3, char* param_4); 
+int* gc_interupt_id = NULL;
 
 int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt32 *service_result, SceSblSmCommGcData *data, SceSize size) {
 	if(data->command == 0x20) {
@@ -81,8 +81,8 @@ int cmd56_patch() {
 	PRINT_STR("get module SceSdstor 0x%04X\n", gcauthmgr_get_info);
 	
 	if(sdstor_get_info >= 0){
-		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x3BE0 | 1, (uintptr_t*)&gc_insert_interupt);
-		PRINT_STR("module_get_offset 0x%04X\n", res);
+		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x8b50, (uintptr_t*)gc_interupt_id);
+		PRINT_STR("module_get_offset gc_interupt_id 0x%04X\n", res);
 		return res;
 	}
 	return sdstor_get_info;	
@@ -115,39 +115,6 @@ int kGetLastCmd20KeyId() {
 int kHasCmd20Captured() {
 	return HAS_CAPTURED_CMD20;
 }
-// spent ages trying to find a way to run gc authentication again when already inserted
-// then i had a thought ???
-// have you tried turning it off and on again ????
-int kResetGc() {
-	char param_4[0x10];
-	memset(param_4, 0x00, sizeof(param_4));
-	
-	PRINT_STR("Resetting GC ...\n");
-	
-	// trigger gc remove interupt
-	int res = gc_insert_interupt(0, 0x200, 0, param_4);
-	PRINT_STR("gc_insert_interupt(0, 0x200, 0, param_4) 0x%04X\n", res);
-	if(res < 0) return res;
-	
-	// power down gc slot
-	res = ksceSysconCtrlSdPower(0);
-	PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
-	if(res < 0) return res;
-
-	// power up gc slot
-	res = ksceSysconCtrlSdPower(1);
-	PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
-	if(res < 0) return res;
-	
-	// trigger gc insert interupt
-	res = gc_insert_interupt(1, 0x100000, 0, param_4);
-	PRINT_STR("gc_insert_interupt(1, 0x100000, 0, param_4) 0x%04X\n", res);
-	if(res < 0) return res;
-	
-	PRINT_STR("param_4[5] = 0x%04X\n", param_4[5]);
-	
-	return 0;
-}
 
 int kClearCartSecret() {
 	return ksceSblGcAuthMgrDrmBBClearCartSecret();
@@ -161,4 +128,31 @@ int kGetCartSecret(uint8_t* keys) {
 	if(keys != NULL) ksceKernelMemcpyKernelToUser(keys, (const void*)k_keys, sizeof(k_keys));
 		
 	return res;
+}
+
+
+int kResetGc() {
+	if(gc_interupt_id != NULL) {
+		PRINT_STR("Resetting GC ...\n");
+		// trigger gc remove interupt	
+		int res = ksceKernelWaitEventFlag(*gc_interupt_id, 0x100, 0x05, 0x00, 0x00);
+		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100, 0x05, 0x00, 0x00) 0x%04X\n", *gc_interupt_id, res);
+		if(res < 0) return res;
+		
+		// power down gc slot
+		res = ksceSysconCtrlSdPower(0);
+		PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
+		if(res < 0) return res;
+
+		// power up gc slot
+		res = ksceSysconCtrlSdPower(1);
+		PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
+		if(res < 0) return res;
+		
+		// trigger gc insert interupt
+		res = ksceKernelWaitEventFlag(*gc_interupt_id, 0x1000, 0x05, 0x00, 0x00);
+		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000, 0x05, 0x00, 0x00) 0x%04X\n", *gc_interupt_id, res);
+		return res;
+	}
+	return -1;
 }
