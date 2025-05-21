@@ -29,7 +29,8 @@ void get_output_filename(char* output, char* format, int size_output) {
 
 
 int handle_dump_device(int what, char* block_device, char* outfile, char* ip_address, unsigned short port) {
-	int res = -1;
+	int res = -9890;
+	
 	if(what != DUMP_KEYS_ONLY)
 		res = do_device_dump(block_device, outfile, (what == DUMP_WHOLE_GC) ? 1 : 0, ip_address, port);		
 	else if(ip_address == NULL)
@@ -48,7 +49,7 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 	memset(ip_address, 0x00, sizeof(ip_address));
 	strncpy(ip_address, DEFAULT_IP, sizeof(ip_address));
 	
-	int selected = -1;
+	int selected = -9891;
 	while(1) {
 		selected = do_network_options(ip_address, port);
 		switch(selected) {
@@ -79,9 +80,9 @@ int handle_menu_set_network_options(int what, char* block_device, char* outfile)
 
 	
 void handle_menu_set_output(char* fmt, int what) {
-	
+	// determine block device	
 	PRINT_STR("handle_menu_set_output\n");
-	// determine block device
+	
 	char* block_device = NULL;
 	char* output_device = NULL;
 	
@@ -103,7 +104,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	PRINT_STR("block_device: %s\n", block_device);
 
 	// get filename
-	char output_filename[MAX_PATH*3];
+	char output_filename[0x128];
 	get_output_filename(output_filename, fmt, MAX_PATH);
 	
 	PRINT_STR("output_filename: %s\n", output_filename);
@@ -114,7 +115,7 @@ void handle_menu_set_output(char* fmt, int what) {
 		total_device_size = device_size(block_device);
 	PRINT_STR("total_device_size %llx\n", total_device_size);
 	
-	int selected = -1;
+	int selected = -9892;
 	while(1) {
 		selected = do_select_output_location(output_filename, total_device_size);
 		
@@ -152,7 +153,7 @@ void handle_menu_set_output(char* fmt, int what) {
 	PRINT_STR("output_device %s\n", output_device);
 
 	// get outfile
-	char output_folder[MAX_PATH*5];
+	char output_folder[0x512];
 	
 	// create "device:bak" folder if not exist
 	if(selected != DUMP_LOCATION_NET) {
@@ -162,10 +163,9 @@ void handle_menu_set_output(char* fmt, int what) {
 	
 	// get full output path, device:bak/file.vci 
 	snprintf(output_folder, sizeof(output_folder), "%sbak/%s", output_device, output_filename);
-	
 	PRINT_STR("what = %x, output_folder = %s\n", what, output_folder);
 
-	int res = -1;
+	int res = -9893;
 	if(selected != DUMP_LOCATION_NET) {
 		res = handle_dump_device(what, block_device, output_folder, NULL, 0);
 	}
@@ -284,7 +284,7 @@ void handle_select_file(int what, char* folder) {
 void handle_select_input_device(int what) {
 
 	char* input_device = NULL;
-	int selected = -1;
+	int selected = -9894;
 	while(1) {
 		selected = do_select_input_location();
 		
@@ -326,7 +326,7 @@ void handle_select_input_device(int what) {
 void handle_menu_select_option() {
 	
 	char* fmt = "";
-	int selected = -1;
+	int selected = -9895;
 	
 	while(1) {
 		selected = do_gc_options();

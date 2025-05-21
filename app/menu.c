@@ -195,7 +195,7 @@ int draw_select_input_location(int* selected, int* window, uint8_t have_ux0, uin
 	
 	DEFOPT(240);
 	
-	ADDOPT(have_ux0, "Load from \"ux0\"");
+	ADDOPT(have_ux0, "Load from \"ux0:\"");
 	ADDOPT(have_xmc, "Load from Sony Memory Card");
 	ADDOPT(have_usb, "Load from USB Drive");
 	ADDOPT(have_host0, "Load from Devkit Host0");
@@ -219,7 +219,7 @@ int draw_select_output_location(int* selected, int* window, char* output_file, u
 	
 	DEFOPT(240);
 	
-	ADDOPT(have_ux0, "Save to \"ux0\"");
+	ADDOPT(have_ux0, "Save to \"ux0:\"");
 	ADDOPT(have_xmc, "Save to Sony Memory Card");
 	ADDOPT(have_usb, "Save to USB Drive");
 	ADDOPT(have_host0, "Save to Devkit Host0");	
@@ -340,7 +340,7 @@ void draw_confirmation_message(char* title, char* msg) {
 void draw_device_info(GcInfo* info) {
 	start_draw();
 	draw_background();
-	draw_controls(0);
+	draw_controls(1);
 	
 	draw_title("GC Information");
 	
@@ -525,7 +525,7 @@ int do_device_dump(const char* block_device, char* output_file, uint8_t vci, cha
 		if(res < 0) return res;
 	}
 	
-	int res = -1;
+	int res = -9190;
 	
 	if(ip_address == NULL)
 		res = dump_device(block_device, output_file, vci ? &keys : NULL, draw_dump_progress);

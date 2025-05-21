@@ -12,7 +12,7 @@ int read_sfo_key(char* key, char* out, char* sfo) {
 	if(sfo_size <= 0) ERROR(sfo_size);
 	
 	char* sfo_buffer = malloc(sfo_size);
-	if(sfo_buffer == NULL) ERROR(-1);
+	if(sfo_buffer == NULL) ERROR(-82194);
 
 	memset(sfo_buffer, 0x00, sfo_size);
 	

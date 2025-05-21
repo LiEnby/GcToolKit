@@ -52,8 +52,8 @@
 		int wr = wr_func(wr_fd, &vci, sizeof(VciHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
-		if(wr == 0) ERROR(-1); \
-		if(wr != sizeof(VciHeader)) ERROR(wr * -1); \
+		if(wr == 0) ERROR(-9680); \
+		if(wr != sizeof(VciHeader)) ERROR(-9681); \
 		if(wr < 0) ERROR(wr); \
 	}
 
@@ -76,8 +76,8 @@
 		int wr = wr_func(wr_fd, &vci, sizeof(PsvHeader)); \
 		PRINT_STR("wr = %x\n", wr); \
 		\
-		if(wr == 0) ERROR(-1); \
-		if(wr != sizeof(VciHeader)) ERROR(wr * -1); \
+		if(wr == 0) ERROR(-9682); \
+		if(wr != sizeof(VciHeader)) ERROR(-9683); \
 		if(wr < 0) ERROR(wr); \
 	}
 
@@ -85,7 +85,7 @@
 	uint64_t device_size = 0; \
 	kGetDeviceSize(dev_fd, &device_size); \
 	PRINT_STR("device_size = %llx\n", device_size); \
-	if(device_size == 0) ERROR(-1); \
+	if(device_size == 0) ERROR(-9684); \
 	if(progress_callback != NULL) progress_callback((const char*)placeholder_txt, (char*)placeholder_txt, total, device_size) \
 	
 #define SAFE_CHK(dev) if(memcmp(dev, "sdstor0:gcd", 11) != 0 && memcmp(dev, "sdstor0:uma", 11) != 0) ERROR(-128)

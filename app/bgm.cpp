@@ -1,12 +1,12 @@
 #include <soloud.h>
-#include <soloud_wavstream.h>
+#include <soloud_wav.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstddef>
 extern "C"
 {
 	static SoLoud::Soloud soloud;
-	static SoLoud::WavStream bgm;
+	static SoLoud::Wav bgm;
 	
 	void init_sound() {
 		soloud.init();

@@ -75,9 +75,9 @@ int key_dump_network(char* ip_address, unsigned short port, char* output_file) {
 	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	end_file_send(fd);
 
-	if(wr == 0) return -1;
+	if(wr == 0) return -9582;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return (wr * -1);
+	if(wr != sizeof(GcCmd56Keys)) return -9583;
 
 	return 0;
 }
@@ -96,9 +96,9 @@ int key_dump(char* output_file) {
 	PRINT_STR("wr = %x (sizeof = %x)\n", wr, sizeof(GcCmd56Keys));
 	sceIoClose(fd);
 
-	if(wr == 0) return -1;
+	if(wr == 0) return -9584;
 	if(wr < 0) return wr;
-	if(wr != sizeof(GcCmd56Keys)) return (wr * -1);
+	if(wr != sizeof(GcCmd56Keys)) return -9585;
 
 	return 0;
 }
@@ -124,15 +124,16 @@ void decrypt_packet20_key(uint8_t* secondaryKey0, uint8_t* packet20, uint8_t* pa
 void wait_for_gc_auth() {
 	int res = kResetCmd20Input();
 	PRINT_STR("kResetCmd20Input = %x\n", res);
-	if (res != 0) return;
-	
-	// check if there is already a GC inserted, if there is 
-	// reset the gc device to capture authentication step
-	// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
-	if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
-		res = kResetGc();
-		PRINT_STR("kResetGc = %x\n", res);			
-		if (res != 0) return;
+	if (res >= 0) {
+
+		// check if there is already a GC inserted, if there is 
+		// reset the gc device to capture authentication step
+		// we, dont do this if there is not a gc inserted, incase someone is using an sd2vita.
+
+		if( file_exist("gro0:") || file_exist("grw0:") || device_exist(BLOCK_DEVICE_MEDIAID) ) {
+			res = kResetGc();
+			PRINT_STR("kResetGc = %x\n", res);
+		}		
 	}
 
 	while(!kHasCmd20Captured()) { /*wait*/ };
@@ -210,7 +211,7 @@ uint8_t verify_packet20_key(GcCmd56Keys* keys) {
 	char TITLE_ID[12];
 	int ret = read_first_filename(folder, TITLE_ID, sizeof(TITLE_ID));
 	PRINT_STR("read_first_filename license folder ret = 0x%x\n", ret);
-	if(ret < 0) ERROR(-1);
+	if(ret < 0) ERROR(-9586);
 
 	PRINT_STR("TITLE_ID = %s\n", TITLE_ID);
 	snprintf(folder, MAX_PATH, "gro0:/license/app/%s", TITLE_ID);
@@ -293,7 +294,6 @@ int extract_gc_keys(GcCmd56Keys* keys) {
 		PRINT_BUFFER(keys->packet20_key);
 		
 		// verify packet18_key key
-		
 		if(!verify_cmd56_keys(keys)) return -3;
 		
 		// verify rif buffer
@@ -303,5 +303,5 @@ int extract_gc_keys(GcCmd56Keys* keys) {
 		
 		return 0;
 	}
-	return -1;
+	return -9587;
 }

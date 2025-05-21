@@ -6,7 +6,7 @@
 
 int kGetCardId(int deviceIndex, void* cardId) {
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
-	if(k_deviceInfo == NULL) return -1;
+	if(k_deviceInfo == NULL) return -1132;
 
 	char k_cardId[sizeof(k_deviceInfo->ctxb.CID)];
 	memset(k_cardId, 0x00, sizeof(k_cardId));
@@ -22,7 +22,7 @@ int kGetCardId(int deviceIndex, void* cardId) {
 
 int kGetCardCsd(int deviceIndex, void* cardCsd) {
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
-	if(k_deviceInfo == NULL) return -1;
+	if(k_deviceInfo == NULL) return -1133;
 	
 	char k_cardCsd[sizeof(k_deviceInfo->ctxb.CSD)];
 	memset(k_cardCsd, 0x00, sizeof(k_cardCsd));
@@ -39,7 +39,7 @@ int kGetCardCsd(int deviceIndex, void* cardCsd) {
 
 int kGetCardExtCsd(int deviceIndex, void* cardExtCsd) {
 	sd_context_part_mmc* k_deviceInfo = (sd_context_part_mmc*)ksceSdifGetSdContextPartValidateMmc(deviceIndex);	
-	if(k_deviceInfo == NULL) return -1;
+	if(k_deviceInfo == NULL) return -1134;
 	
 	char k_cardExtCsd[sizeof(k_deviceInfo->EXT_CSD)];
 	memset(k_cardExtCsd, 0x00, sizeof(k_cardExtCsd));

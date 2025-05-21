@@ -10,5 +10,11 @@ typedef struct SceSblSmCommGcData {
     int always0;
 } SceSblSmCommGcData;
 
+typedef struct GcInteruptInfo{
+	SceUID request_id;
+	SceUID op_sync_id;
+	char unk[0x20];
+} GcInteruptInfo;
+
 int cmd56_patch();
 int cmd56_unpatch();

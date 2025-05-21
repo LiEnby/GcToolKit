@@ -21,7 +21,7 @@ static int proto_keyid_check_inject = -1;
 static int ksceSblSmCommCallFuncHook = -1;
 static tai_hook_ref_t ksceSblSmCommCallFuncHookRef;
 
-int* gc_interupt_id = NULL;
+GcInteruptInfo* interupt_info = NULL;
 
 int ksceSblSmCommCallFunc_patch(SceSblSmCommId id, SceUInt32 service_id, SceUInt32 *service_result, SceSblSmCommGcData *data, SceSize size) {
 	if(data->command == 0x20) {
@@ -77,15 +77,17 @@ int cmd56_patch() {
 	
 	tai_module_info_t sdstor_info;
 	sdstor_info.size = sizeof(tai_module_info_t);
-	int sdstor_get_info = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
-	PRINT_STR("get module SceSdstor 0x%04X\n", gcauthmgr_get_info);
+	int res = taiGetModuleInfoForKernel(KERNEL_PID, "SceSdstor", &sdstor_info);
+	PRINT_STR("get module SceSdstor 0x%04X\n", res);
 	
-	if(sdstor_get_info >= 0){
-		int res = module_get_offset(KERNEL_PID, sdstor_info.modid, 0, 0x8b50, (uintptr_t*)gc_interupt_id);
-		PRINT_STR("module_get_offset gc_interupt_id 0x%04X\n", res);
-		return res;
+	if(res >= 0){
+		PRINT_STR("sdstor_info.modid 0x%04X\n", sdstor_info.modid);
+		res = module_get_offset(KERNEL_PID, sdstor_info.modid, 1, 0x1B24, (uintptr_t*)&interupt_info);
+		
+		PRINT_STR("module_get_offset sdstor_info 0x%04X\n", res);
+		PRINT_STR("interupt_info 0x%04X\n", interupt_info);
 	}
-	return sdstor_get_info;	
+	return res;	
 }
 
 int cmd56_unpatch() {
@@ -132,27 +134,39 @@ int kGetCartSecret(uint8_t* keys) {
 
 
 int kResetGc() {
-	if(gc_interupt_id != NULL) {
+	if(interupt_info != NULL) {
 		PRINT_STR("Resetting GC ...\n");
-		// trigger gc remove interupt	
-		int res = ksceKernelWaitEventFlag(*gc_interupt_id, 0x100, 0x05, 0x00, 0x00);
-		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100, 0x05, 0x00, 0x00) 0x%04X\n", *gc_interupt_id, res);
-		if(res < 0) return res;
 		
 		// power down gc slot
-		res = ksceSysconCtrlSdPower(0);
+		int res = ksceSysconCtrlSdPower(0);
 		PRINT_STR("ksceSysconCtrlSdPower(0) 0x%04X\n", res);
 		if(res < 0) return res;
-
+		
+		// trigger gc remove interupt	
+		res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x100);
+		PRINT_STR("ksceKernelSetEventFlag(0x%02X, 0x100) 0x%04X\n", interupt_info[1].request_id, res);
+		if(res < 0) return res;
+		
+		// wait for event to finish.
+		res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id, 0x100,5,0,0);
+		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x100,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+		if(res < 0) return res;
+		
 		// power up gc slot
 		res = ksceSysconCtrlSdPower(1);
 		PRINT_STR("ksceSysconCtrlSdPower(1) 0x%04X\n", res);
 		if(res < 0) return res;
 		
-		// trigger gc insert interupt
-		res = ksceKernelWaitEventFlag(*gc_interupt_id, 0x1000, 0x05, 0x00, 0x00);
-		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000, 0x05, 0x00, 0x00) 0x%04X\n", *gc_interupt_id, res);
+		// trigger gc insert interupt	
+		res = ksceKernelSetEventFlag(interupt_info[1].request_id, 0x1000);
+		PRINT_STR("ksceKernelSetEventFlag(0x%02X, 0x1000) 0x%04X\n", interupt_info[1].request_id, res);
+		if(res < 0) return res;
+		
+		// wait for event to finish
+		res = ksceKernelWaitEventFlag(interupt_info[1].op_sync_id,0x1000,5,0,0);
+		PRINT_STR("ksceKernelWaitEventFlag(0x%02X, 0x1000,5,0,0) 0x%04X\n", interupt_info[1].op_sync_id, res);
+		
 		return res;
 	}
-	return -1;
+	return -1130;
 }
