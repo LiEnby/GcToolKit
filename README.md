@@ -79,8 +79,7 @@ NOTE: simply disabling it in settings isn't enough due to a bug; see [this issue
 - Princess of Sleeping - ExFAT Format code, CMD56 helps
 - dots_tb - original research into USB OTG, and Accessory Port
 - EA Games 1997 - BGM Music from Dungeon Keeper 1 https://www.youtube.com/watch?v=RXfUV_z7i0c
-
-~~- SKGLeba - psp2spl for F00D Code execution~~ (no longer used)
+- ~~SKGLeba - psp2spl for F00D Code execution~~ (no longer used)
 
 # Difference between .vci and .psv formats (why a new format?)
 
