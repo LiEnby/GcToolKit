@@ -31,8 +31,8 @@ to do this requires running the program "gc_backup_network" program running on y
 
 this feature is useful if you don't have a memory card or otherwise, do not have an avalible storage device
 
-- [Windows](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.exe) [(mirror)](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.exe)
-- [Linux](http://silica.codes/Li/GcToolKit/releases/download/v1.4/gc_backup_network.elf) [(mirror)](https://github.com/LiEnby/GcToolKit/releases/download/v1.4/gc_backup_network.elf)
+- [Windows](http://silica.codes/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.exe) [(mirror)](https://github.com/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.exe)
+- [Linux](http://silica.codes/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.elf) [(mirror)](https://github.com/Estradrive/GcToolKit/releases/download/v1.5/gc_backup_network.elf)
 
 the source code for it is in the "pc" folder of this repoistory.
 
@@ -93,8 +93,13 @@ SHA256 is a one-way function and so you cannot go backwards from
 the data captured in psvgamesd to the packet20 and packet18 constants.
 
 main advantage is that with VCI it would be thereotically possible to create a vita flash cartridge. .
+
 this also means that .VCI can be easily converted to .PSV, but .PSV cannot be converted back to VCI without keys
+for tools to convert to/from VCI format to others, see: https://silica.codes/Estradrive/VCI-TOOLS
 
-for tools to convert to/from VCI format to others, see: https://silica.codes/Li/VCI-TOOLS
+-- 
 
-![gc authentication diagram](https://silica.codes/Li/GcDumper/raw/branch/main/diagram.png)
+for better understanding, here is a complete flowchart of how NpDrm works for physical games, 
+as well as a comparison between different backup formats over the years; 
+and an overview on how the vita decrypts game data in general;
+![cmd56 diagram](https://silica.codes/Estradrive/GcDumper/raw/branch/main/diagram.png)
