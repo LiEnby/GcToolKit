@@ -102,4 +102,6 @@ for tools to convert to/from VCI format to others, see: https://silica.codes/Est
 for better understanding, here is a complete flowchart of how NpDrm works for physical games, 
 as well as a comparison between different backup formats over the years; 
 and an overview on how the vita decrypts game data in general;
-![cmd56 diagram](https://silica.codes/Estradrive/GcDumper/raw/branch/main/diagram.png)
+
+
+![gc authentication diagram](https://silica.codes/Estradrive/GcDumper/raw/branch/main/diagram.png)
