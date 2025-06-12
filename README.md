@@ -104,4 +104,4 @@ as well as a comparison between different backup formats over the years;
 and an overview on how the vita decrypts game data in general;
 
 
-![gc authentication diagram](https://silica.codes/Estradrive/GcDumper/raw/branch/main/diagram.png)
+![gc authentication diagram](https://silica.codes/Estradrive/GcToolKit/raw/branch/main/diagram.png)
